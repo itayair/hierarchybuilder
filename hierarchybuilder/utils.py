@@ -8,7 +8,7 @@ import statistics
 
 cos = torch.nn.CosineSimilarity(dim=0, eps=1e-08)
 nlp = parse_medical_data.nlp
-device_type = torch.device("cpu")
+device = torch.device("cpu")
 #device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
 sapBert_tokenizer = AutoTokenizer.from_pretrained('cambridgeltl/SapBERT-from-PubMedBERT-fulltext')
 sapBert_model = AutoModel.from_pretrained('cambridgeltl/SapBERT-from-PubMedBERT-fulltext')
@@ -32,12 +32,12 @@ entries_number_limit = 50
 
 
 def initialize_data(input_file='', input_format=0, ignore_words=None, output_file_name='', entries_number=50,
-                    device=""):
+                    device_type=""):
     global topics_dict, dict_span_to_counter, dict_word_to_lemma, dict_lemma_to_synonyms, \
         dict_longest_span_to_counter, dict_noun_lemma_to_synonyms, dict_noun_lemma_to_noun_words, \
-        dict_noun_lemma_to_counter, dict_noun_word_to_counter, etiology, entries_number_limit, device_type, model
-    if device:
-        device_type = device
+        dict_noun_lemma_to_counter, dict_noun_word_to_counter, etiology, entries_number_limit, device, model
+    if device_type:
+        device = device_type
         model = model.to(device)
     entries_number_limit = entries_number
     if ignore_words is None:

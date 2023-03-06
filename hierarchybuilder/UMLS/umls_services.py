@@ -1,9 +1,5 @@
-# args_number = sys.argv[0]
-# if args_number > 0:
-#     print(sys.argv[1])
-#     print(sys.argv[2])
 import uvicorn
-import umls_loader
+from hierarchybuilder.UMLS import umls_loader
 import json
 from fastapi import FastAPI, APIRouter
 

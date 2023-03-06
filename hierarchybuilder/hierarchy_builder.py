@@ -162,6 +162,6 @@ def hierarchy_builder(input_file='', input_format=0, output_file_name='', entrie
     json_dag_visualization.json_dag_visualization(top_k_topics, global_index_to_similar_longest_np,
                                                   taxonomic_np_objects, topic_object_lst)
 
-
-hierarchy_builder(input_file='input_files/input_json_files/jaundice.json', input_format=0,
-                  output_file_name='results/jaundice_debug_mode', entries_number=50, ignore_words=['cause', 'jaundice'])
+#
+# hierarchy_builder(input_file='input_files/input_json_files/jaundice.json', input_format=0,
+#                   output_file_name='results/jaundice_debug_mode', entries_number=50, ignore_words=['cause', 'jaundice'])
