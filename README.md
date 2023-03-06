@@ -1,3 +1,3 @@
-# 'example_package_itayair'
+# 'Hierarchy Builder package'
 
-The 'example_package_itayair' is a simple testing example to understand the basics of developing your first Python package.
+The 'Hierarchy Builder package' is a ...
