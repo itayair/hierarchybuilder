@@ -317,7 +317,10 @@ def combine_nodes_lst(np_object_lst, span_to_object, dict_object_to_global_label
         update_all_ancestors_node_was_combined(first_element, first_element.label_lst)
 
 
-def update_ans_with_remove_link(node, label_lst):
+def update_ans_with_remove_link(node, label_lst, visited=set()):
+    if node in visited:
+        return
+    visited.add(node)
     new_label_lst = node.label_lst - label_lst
     for child in node.children:
         new_label_lst.update(child.label_lst)
@@ -325,7 +328,7 @@ def update_ans_with_remove_link(node, label_lst):
         return
     node.label_lst = new_label_lst
     for parent in node.parents:
-        update_ans_with_remove_link(parent, label_lst)
+        update_ans_with_remove_link(parent, label_lst, visited)
 
 
 def remove_node_parents_edge(node, child):

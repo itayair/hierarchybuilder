@@ -370,7 +370,8 @@ def update_symmetric_relation_in_DAG(nodes_lst, visited=set()):
             print("node is found in its parents' list")
             print(node.span_lst)
         if node in node.children:
-            node.children.remove(node)
+            while node not in node.children:
+                node.children.remove(node)
             print("node is found in its children's list")
             print(node.span_lst)
         for child in node.children:

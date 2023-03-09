@@ -113,39 +113,56 @@ def hierarchy_builder(examples=[], output_file='', entries_number=50, ignore_wor
                                                   longest_np_lst, longest_NP_to_global_index,
                                                   dict_object_to_global_label)
         counter += 1
+    ut.isCyclic(topic_object_lst)
+    print("after the main loop")
     ut.get_all_spans(topic_object_lst, all_spans)
     all_spans = list(all_spans)
     DAG_utils.initialize_all_spans_vectors(all_spans, span_to_vector)
     DAG_utils.initialize_nodes_weighted_average_vector(topic_object_lst, global_index_to_similar_longest_np,
                                                        span_to_vector)
     DAG_utils.update_symmetric_relation_in_DAG(topic_object_lst)
+    ut.isCyclic(topic_object_lst)
+    print("after update symmetric relations")
+    ut.isCyclic(topic_object_lst)
     paraphrase_detection_SAP_BERT.combine_equivalent_nodes_by_semantic_DL_model(topic_object_lst, span_to_object,
                                                                                 dict_object_to_global_label,
                                                                                 global_dict_label_to_object,
                                                                                 span_to_vector)
-    DAG_utils.update_symmetric_relation_in_DAG(topic_object_lst)
+    ut.isCyclic(topic_object_lst)
     print("END combine equivalent nodes by DL model")
+    DAG_utils.update_symmetric_relation_in_DAG(topic_object_lst)
+    ut.isCyclic(topic_object_lst)
+    print("after update symmetric relations")
     combine_nodes_UMLS.combine_nodes_by_umls_synonymous_spans(span_to_object, dict_object_to_global_label,
                                                               global_dict_label_to_object, topic_object_lst,
                                                               span_to_vector)
+    ut.isCyclic(topic_object_lst)
+    print("END combine equivalent nodes by UMLS")
     ut.update_nodes_labels(topic_object_lst)
     DAG_utils.update_symmetric_relation_in_DAG(topic_object_lst)
-    print("END combine equivalent nodes by UMLS")
+    ut.isCyclic(topic_object_lst)
+    print("after update symmetric relations")
     DAG_utils.initialize_nodes_weighted_average_vector(topic_object_lst, global_index_to_similar_longest_np,
                                                        span_to_vector)
     # Adding taxonomic nodes
     taxonomic_np_objects = taxonomies_from_UMLS.add_taxonomies_to_DAG_by_UMLS(topic_object_lst, dict_span_to_rank,
                                                                               span_to_object, span_to_vector)
+    ut.isCyclic(topic_object_lst)
     print("END use in UMLS for taxonomic and equivalent nodes")
     DAG_utils.update_symmetric_relation_in_DAG(topic_object_lst)
+    ut.isCyclic(topic_object_lst)
+    print("after update symmetric relations")
     DAG_utils.initialize_nodes_weighted_average_vector(topic_object_lst, global_index_to_similar_longest_np,
                                                        span_to_vector)
     paraphrase_detection_SAP_BERT.combine_equivalent_parent_and_children_nodes_by_semantic_DL_model(
         topic_object_lst.copy(), span_to_object, dict_object_to_global_label, global_dict_label_to_object,
         topic_object_lst, span_to_vector)
-    DAG_utils.update_symmetric_relation_in_DAG(topic_object_lst)
-    ut.update_nodes_labels(topic_object_lst)
+    ut.isCyclic(topic_object_lst)
     print("finish combine parent children nodes by DL models")
+    DAG_utils.update_symmetric_relation_in_DAG(topic_object_lst)
+    ut.isCyclic(topic_object_lst)
+    print("after update symmetric relations")
+    ut.update_nodes_labels(topic_object_lst)
     # DAG Pruning
     hierarchical_structure_algorithms.DAG_contraction_by_set_cover_algorithm(topic_object_lst,
                                                                              global_dict_label_to_object,

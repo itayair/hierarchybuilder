@@ -259,6 +259,9 @@ def get_labels_from_visited_children(children, visited_nodes):
 
 def build_tree_from_DAG(np_object, global_dict_label_to_object, visited_nodes,
                         global_index_to_similar_longest_np, visited_labels):
+    if np_object in visited_nodes:
+        return
+    visited_nodes.add(np_object)
     if not np_object.children:
         return
     labels_covered_by_children = DAG_utils.get_labels_of_children(np_object.children)
@@ -280,7 +283,6 @@ def build_tree_from_DAG(np_object, global_dict_label_to_object, visited_nodes,
     add_longest_nps_to_np_object_children(np_object, uncounted_labels, global_dict_label_to_object)
     if selected_np_objects:
         for np_object_child in selected_np_objects:
-            visited_nodes.add(np_object_child)
             build_tree_from_DAG(np_object_child, global_dict_label_to_object, visited_nodes,
                                 global_index_to_similar_longest_np, set())
 
