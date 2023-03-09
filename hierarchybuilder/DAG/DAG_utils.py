@@ -272,7 +272,7 @@ def add_descendants_of_node_to_graph(node, global_index_to_similar_longest_np, n
     NP_occurrences = get_frequency_from_labels_lst(global_index_to_similar_longest_np,
                                                    label_lst)
     covered_occurrences = get_frequency_from_labels_lst(global_index_to_similar_longest_np,
-                                  node.label_lst)
+                                                        node.label_lst)
     if NP_occurrences:
         if node not in different_concepts:
             concept_to_occurrences[span_to_present] = NP_occurrences
@@ -390,7 +390,11 @@ def get_frequency_from_labels_lst(global_index_to_similar_longest_np, label_lst)
     num_of_labels = 0
     for label in label_lst:
         for span in global_index_to_similar_longest_np[label]:
-            num_of_labels += ut.dict_longest_span_to_counter[span]
+            try:
+                num_of_labels += ut.dict_longest_span_to_counter.get(span, 1)
+            except:
+                print(span)
+                raise Exception("the error is found in the get counter of longest span")
     return num_of_labels
 
 
@@ -421,28 +425,31 @@ def initialize_node_weighted_vector(node, span_to_vector):
 
 def initialize_all_spans_vectors(all_spans, span_to_vector):
     with torch.no_grad():
-        encoded_input = \
-            ut.sapBert_tokenizer(all_spans, return_tensors='pt', padding=True).to(ut.device)
-        phrase_embeddings = ut.model(**encoded_input).last_hidden_state.cpu()
-        phrase_embeddings = torch.transpose(phrase_embeddings, 0, 1)
-        phrase_embeddings = phrase_embeddings[0, :]
-        del encoded_input
-        torch.cuda.empty_cache()
-    for j in range(len(all_spans)):
-        span_to_vector[all_spans[j]] = phrase_embeddings[j].reshape(-1, 1)
+        for i in range(0, len(all_spans), 100):
+            batch = all_spans[i: i + 100]
+            encoded_input = \
+                ut.sapBert_tokenizer(batch, return_tensors='pt', padding=True).to(ut.device)
+            temp = ut.model(**encoded_input)
+            phrase_embeddings = temp.last_hidden_state.cpu()
+            phrase_embeddings = torch.transpose(phrase_embeddings, 0, 1)
+            phrase_embeddings = phrase_embeddings[0, :]
+            del encoded_input, temp
+            torch.cuda.empty_cache()
+            for j in range(len(batch)):
+                span_to_vector[batch[j]] = phrase_embeddings[j].reshape(-1, 1)
 
 
 def get_represented_vector(span):
     with torch.no_grad():
         encoded_input = \
             ut.sapBert_tokenizer(span, return_tensors='pt', padding=True).to(ut.device)
-        phrase_embeddings = ut.model(**encoded_input).last_hidden_state.cpu()
+        temp = ut.model(**encoded_input)
+        phrase_embeddings = temp.last_hidden_state.cpu()
         phrase_embeddings = torch.transpose(phrase_embeddings, 0, 1)
         phrase_embeddings = phrase_embeddings[0, :]
-        del encoded_input
+        del encoded_input, temp
         torch.cuda.empty_cache()
     return phrase_embeddings.reshape(-1, 1)
-
 
 
 def initialize_nodes_weighted_average_vector(topic_object_lst, global_index_to_similar_longest_np, span_to_vector,

@@ -44,7 +44,8 @@ def create_dict_from_common_np_to_group_members_indices(span_to_group_members, d
                                           sorted(span_to_group_members.items(), key=lambda item: len(item[1]),
                                                  reverse=True)}
     common_np_to_group_members_indices = {k: v for k, v in common_np_to_group_members_indices.items() if
-                                          (len(v) > 1 or ut.dict_span_to_counter[k] > 1) and dict_span_to_rank[k] >= 2}
+                                          (len(v) > 1 or ut.dict_span_to_counter.get(k, 1) > 1) and
+                                          dict_span_to_rank.get(k, 2) >= 2}
 
     combine_similar_longest_np_with_common_sub_nps(common_np_to_group_members_indices,
                                                    dict_longest_span_to_his_synonyms, dict_span_to_similar_spans)

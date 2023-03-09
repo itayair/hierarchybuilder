@@ -1,5 +1,6 @@
 from hierarchybuilder.topic_clustering import utils_clustering
 from hierarchybuilder.expansions import valid_expansion_utils
+from hierarchybuilder.expansions import parse_medical_data
 import json
 import requests
 
@@ -92,6 +93,16 @@ def find_match_for_abbreviation(abbreviation_lst, dict_noun_compound_to_lst, dic
     dict_abbreviation_to_elaboration.update(dict_abbreviation_to_compound)
 
 
+def extend_ignore_words(ignore_words):
+    new_ignore_words = set()
+    for word in ignore_words:
+        word_as_tokens = parse_medical_data.nlp(word)
+        for token in word_as_tokens:
+            lemma_word = token.lemma_.lower()
+            new_ignore_words.add(lemma_word)
+    ignore_words.update(new_ignore_words)
+
+
 def convert_examples_to_clustered_data(examples, ignore_words):
     dict_noun_lemma_to_synonyms = {}
     span_lst = set()
@@ -101,6 +112,7 @@ def convert_examples_to_clustered_data(examples, ignore_words):
     counter = 0
     dict_sentence_to_span_lst = {}
     valid_span_lst = set()
+    extend_ignore_words(ignore_words)
     for biggest_noun_phrase, head_span, all_valid_nps_lst, sentence in examples:
         span = valid_expansion_utils.get_tokens_as_span(biggest_noun_phrase)
         dict_sentence_to_span_lst[sentence] = dict_sentence_to_span_lst.get(sentence, [])
@@ -129,7 +141,7 @@ def convert_examples_to_clustered_data(examples, ignore_words):
                                                                 valid_expansion_utils, counter, valid_span_lst)
     print(counter)
     utils_clustering.synonyms_consolidation(dict_noun_lemma_to_synonyms)
-    filter_and_sort_dicts()
+    # filter_and_sort_dicts()
     dict_lemma_to_synonyms = utils_clustering.create_dicts_for_words_similarity(dict_word_to_lemma)
     dict_lemma_to_synonyms.update(dict_noun_lemma_to_synonyms)
     topics_dict = {k: v for k, v in

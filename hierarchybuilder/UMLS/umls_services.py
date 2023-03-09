@@ -33,6 +33,7 @@ def get_broader_terms(terms: str, relation_type: str):
             continue
     return {"broader_terms": broader_terms}
 
+
 def create_umls_server():
     umls_loader.load_umls_data()
     uvicorn.run(app, host="127.0.0.1", port=5000, log_level="info")

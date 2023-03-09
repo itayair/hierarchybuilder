@@ -30,12 +30,15 @@ def create_dict_RB_to_objects_lst(dict_RB_to_objects, np_object, visited, relati
         create_dict_RB_to_objects_lst(dict_RB_to_objects, child, visited)
 
 
-def is_parent_in_lst(np_object, object_lst):
+def is_parent_in_lst(np_object, object_lst, visited=set()):
+    visited.add(np_object)
     intersect_parents = np_object.parents.intersection(object_lst)
     if intersect_parents:
         return True
     for parent in np_object.parents:
-        is_parent_in_list = is_parent_in_lst(parent, object_lst)
+        if parent in visited:
+            continue
+        is_parent_in_list = is_parent_in_lst(parent, object_lst, visited)
         if is_parent_in_list:
             return True
     return False
@@ -51,10 +54,13 @@ def initialize_span_to_object_dict(dict_span_to_object, np_object, visited):
         initialize_span_to_object_dict(dict_span_to_object, child, visited)
 
 
-def update_parents_with_new_labels(node, label_lst):
+def update_parents_with_new_labels(node, label_lst, visited=set()):
     for parent in node.parents:
+        if parent in visited:
+            continue
+        visited.add(parent)
         parent.label_lst.update(label_lst)
-        update_parents_with_new_labels(parent, label_lst)
+        update_parents_with_new_labels(parent, label_lst, visited)
 
 
 def link_np_object_to_RB_related_nodes(np_object, object_lst, added_edges, added_taxonomic_relation,

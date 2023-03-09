@@ -80,7 +80,7 @@ def get_examples_from_input_file(file_name, is_txt_format):
     return examples
 
 
-def get_examples_in_all_valid_answers_format(examples):
+def get_examples_as_all_optional_answers_format(examples):
     collection_format_examples = []
     for example in examples:
         sentence, span = example
@@ -97,8 +97,8 @@ def get_examples_in_all_valid_answers_format(examples):
     return collection_format_examples
 
 
-def get_examples_from_special_format(file_name='input_files/text_files/chest_pain_causes.txt', is_txt_format=False):
-    examples = get_examples_from_input_file(file_name, is_txt_format)
-    collection_format_examples = get_examples_in_all_valid_answers_format(examples)
-    return collection_format_examples
+# def get_examples_from_special_format(file_name='input_files/text_files/chest_pain_causes.txt', is_txt_format=False):
+#     examples = get_examples_from_input_file(file_name, is_txt_format)
+#     collection_format_examples = get_examples_as_all_valid_answers_format(examples)
+#     return collection_format_examples
 

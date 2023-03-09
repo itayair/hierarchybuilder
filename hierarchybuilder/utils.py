@@ -18,7 +18,6 @@ model = model.eval()
 dict_span_to_lemma_lst = {}
 dict_noun_lemma_to_examples = {}
 topics_dict = {}
-dict_noun_lemma_to_examples = {}
 dict_span_to_counter = {}
 dict_word_to_lemma = {}
 dict_lemma_to_synonyms = {}
@@ -31,7 +30,7 @@ etiology = 'etiology'
 entries_number_limit = 50
 
 
-def initialize_data(input_file='', input_format=0, ignore_words=None, output_file_name='', entries_number=50,
+def initialize_data(examples, ignore_words=None, output_file='', entries_number=50,
                     device_type=""):
     global topics_dict, dict_span_to_counter, dict_word_to_lemma, dict_lemma_to_synonyms, \
         dict_longest_span_to_counter, dict_noun_lemma_to_synonyms, dict_noun_lemma_to_noun_words, \
@@ -39,21 +38,23 @@ def initialize_data(input_file='', input_format=0, ignore_words=None, output_fil
     if device_type:
         device = device_type
         model = model.to(device)
+        model = model.eval()
     entries_number_limit = entries_number
     if ignore_words is None:
         ignore_words = set('cause')
-    if output_file_name:
-        etiology = output_file_name
-    if input_file == '':
-        raise Exception("input file isn't supplied")
-    if input_format:
-        is_txt_format = True
-    else:
-        is_txt_format = False
-    examples = parse_medical_data.get_examples_from_special_format(input_file, is_txt_format)
+    if output_file:
+        etiology = output_file
+    # if input_file == '':
+    #     raise Exception("input file isn't supplied")
+    # if input_format:
+    #     is_txt_format = True
+    # else:
+    #     is_txt_format = False
+    # examples = parse_medical_data.get_examples_from_special_format(input_file, is_txt_format)
+    collection_format_examples = parse_medical_data.get_examples_as_all_optional_answers_format(examples)
     topics_dict, dict_span_to_counter, dict_word_to_lemma, dict_lemma_to_synonyms, \
     dict_longest_span_to_counter, dict_noun_lemma_to_synonyms, dict_noun_lemma_to_noun_words, dict_noun_lemma_to_counter, \
-    dict_noun_word_to_counter = main_clustering.convert_examples_to_clustered_data(examples, ignore_words)
+    dict_noun_word_to_counter = main_clustering.convert_examples_to_clustered_data(collection_format_examples, ignore_words)
     dict_span_to_counter.update(dict_noun_word_to_counter)
     dict_span_to_counter.update(dict_noun_lemma_to_counter)
 
@@ -90,10 +91,12 @@ def isCyclic(nodes_lst):
 def update_nodes_labels(nodes_lst, visited=set()):
     labels_lst = set()
     for node in nodes_lst:
+        if node in visited:
+            continue
+        visited.add(node)
         desc_labels = update_nodes_labels(node.children, visited)
         node.label_lst.update(desc_labels)
         labels_lst.update(node.label_lst)
-        visited.add(node)
     return labels_lst
 
 

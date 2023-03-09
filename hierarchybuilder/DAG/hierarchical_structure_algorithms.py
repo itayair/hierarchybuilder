@@ -194,8 +194,13 @@ def set_cover(children, np_object_parent, global_index_to_similar_longest_np):
     while True:
         # np_object = max(children, key=lambda np_object: len(
         #     np_object_parent.label_lst.intersection(np_object.label_lst - covered)), default=None)
-        np_object = max(children, key=lambda np_object: DAG_utils.get_frequency_from_labels_lst(
-            global_index_to_similar_longest_np, np_object.label_lst - covered), default=None)
+        try:
+            np_object = max(children, key=lambda np_object: DAG_utils.get_frequency_from_labels_lst(
+                global_index_to_similar_longest_np, np_object.label_lst - covered), default=None)
+        except:
+            for child in children:
+                print(child.span_lst)
+                raise Exception("There is error in the max function")
         if not np_object:
             break
         if DAG_utils.get_frequency_from_labels_lst(

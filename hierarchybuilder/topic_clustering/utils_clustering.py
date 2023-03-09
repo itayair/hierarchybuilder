@@ -65,9 +65,9 @@ def update_new_valid_example(span, dict_longest_span_to_counter, all_valid_nps_l
                              dict_span_to_counter,
                              valid_expansion_utils, counter, valid_span_lst):
     dict_longest_span_to_counter[span] = 1
-    if not valid_span_lst:
-        dict_span_to_counter[span] = dict_span_to_counter.get(span, 0) + 1
-        print("There is longest expansion that isn't in the all_valid_nps_lst")
+    # if not valid_span_lst:
+    #     dict_span_to_counter[span] = dict_span_to_counter.get(span, 0) + 1
+    #     print("There is longest expansion that isn't in the all_valid_nps_lst")
     for sub_span in all_valid_nps_lst:
         dict_span_to_counter[valid_expansion_utils.get_tokens_as_span(sub_span[0])] = dict_span_to_counter.get(
             valid_expansion_utils.get_tokens_as_span(sub_span[0]), 0) + 1
@@ -198,10 +198,21 @@ def update_dictionary_umls_synonyms(dict_word_to_synonyms, word_lst):
         chunk = word_lst[i: i + 100]
         if 'null' in chunk:
             chunk.remove('null')
-        post_data = json.dumps(chunk)
-        dict_response = requests.post('http://127.0.0.1:5000/create_synonyms_dictionary/', params={"words": post_data})
-        output = dict_response.json()["synonyms"]
-        dict_word_to_synonyms.update(output)
+        try:
+            post_data = json.dumps(chunk)
+            dict_response = requests.post('http://127.0.0.1:5000/create_synonyms_dictionary/', params={"words": post_data})
+            output = dict_response.json()["synonyms"]
+            dict_word_to_synonyms.update(output)
+        except:
+            for word in chunk:
+                try:
+                    post_data = json.dumps([word])
+                    dict_response = requests.post('http://127.0.0.1:5000/create_synonyms_dictionary/',
+                                                  params={"words": post_data})
+                    output = dict_response.json()["synonyms"]
+                    dict_word_to_synonyms.update(output)
+                except:
+                    print("this word is problematic: " + word)
     for noun, synonyms in dict_word_to_synonyms.items():
         remove_lst = set()
         for synonym in synonyms:

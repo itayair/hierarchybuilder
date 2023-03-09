@@ -5,6 +5,7 @@ import hierarchybuilder.visualization.json_dag_visualization as json_dag_visuali
 import hierarchybuilder.DAG.DAG_utils as DAG_utils
 from hierarchybuilder.taxonomy import taxonomies_from_UMLS
 import sys
+import json
 
 sys.setrecursionlimit(10000)
 
@@ -67,8 +68,8 @@ def get_uncounted_examples(example_list, global_longest_np_lst, dict_global_long
            dict_uncounted_expansions, dict_counted_longest_answers
 
 
-def hierarchy_builder(input_file='', input_format=0, output_file_name='', entries_number=50, ignore_words=['cause']):
-    ut.initialize_data(input_file, input_format, ignore_words, output_file_name, entries_number)
+def hierarchy_builder(examples=[], output_file='', entries_number=50, ignore_words=None, device_type=""):
+    ut.initialize_data(examples, ignore_words, output_file, entries_number, device_type)
     dict_span_to_rank = {}
     dict_span_to_lemma_lst = ut.dict_span_to_lemma_lst
     global_dict_label_to_object = {}
@@ -162,6 +163,35 @@ def hierarchy_builder(input_file='', input_format=0, output_file_name='', entrie
     json_dag_visualization.json_dag_visualization(top_k_topics, global_index_to_similar_longest_np,
                                                   taxonomic_np_objects, topic_object_lst)
 
+
+# def get_words_as_span(words):
+#     span = ""
+#     idx = 0
+#     for word in words:
+#         # if idx == 0 and token.tag_ in ['IN', 'TO']:
+#         #     continue
+#         if idx != 0 and (word != ',' and word != '.'):
+#             span += ' '
+#         span += word
+#         idx += 1
+#     return span
 #
-# hierarchy_builder(input_file='input_files/input_json_files/jaundice.json', input_format=0,
-#                   output_file_name='results/jaundice_debug_mode', entries_number=50, ignore_words=['cause', 'jaundice'])
+#
+# def convert_to_input_format(file_name):
+#     f = open(file_name, 'r', encoding='utf-8')
+#     data = json.load(f)
+#     example_lst = []
+#     for type in data:
+#         example_data = type['sub_matches']['main']
+#         sentence_as_lst = example_data['words']
+#         offset_first = example_data['captures']['arg1']['first']
+#         offset_last = example_data['captures']['arg1']['last']
+#         span_as_lst = sentence_as_lst[offset_first: offset_last + 1]
+#         example_lst.append((get_words_as_span(sentence_as_lst), get_words_as_span(span_as_lst)))
+#     return example_lst
+#
+#
+# example_lst = convert_to_input_format('input_files/input_json_files/obesity.json')
+#
+# hierarchy_builder(examples=example_lst, output_file='results/obesity_debug_mode', entries_number=50,
+#                   ignore_words=['cause', 'obesity'])
