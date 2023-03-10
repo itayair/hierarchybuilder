@@ -74,16 +74,15 @@ def hierarchy_builder(examples=[], output_file='', entries_number=50, ignore_wor
     dict_span_to_lemma_lst = ut.dict_span_to_lemma_lst
     global_dict_label_to_object = {}
     span_to_object = {}
+    topic_object_lst = []
+    dict_object_to_global_label = {}
     global_index_to_similar_longest_np = {}
     all_spans = set()
     span_to_vector = {}
     global_longest_np_lst = set()
     dict_global_longest_np_to_all_counted_expansions = {}
-    topic_object_lst = []
-    all_object_np_lst = []
     global_longest_np_index = [0]
     longest_NP_to_global_index = {}
-    dict_object_to_global_label = {}
     counter = 0
     print(len(ut.topics_dict.keys()))
     for topic, examples_list in ut.topics_dict.items():
@@ -107,12 +106,10 @@ def hierarchy_builder(examples=[], output_file='', entries_number=50, ignore_wor
         dict_score_to_collection_of_sub_groups, dict_span_to_similar_spans = \
             combineSpans.union_nps(label_to_nps_collection, dict_span_to_rank, dict_label_to_longest_nps_group)
         DAG_utils.insert_examples_of_topic_to_DAG(dict_score_to_collection_of_sub_groups, topic_synonym_lst,
-                                                  dict_span_to_lemma_lst,
-                                                  all_object_np_lst, span_to_object, dict_span_to_similar_spans,
+                                                  dict_span_to_lemma_lst, span_to_object, dict_span_to_similar_spans,
                                                   global_dict_label_to_object, topic_object_lst, longest_np_total_lst,
                                                   longest_np_lst, longest_NP_to_global_index,
                                                   dict_object_to_global_label)
-        counter += 1
     ut.isCyclic(topic_object_lst)
     print("after the main loop")
     ut.get_all_spans(topic_object_lst, all_spans)
@@ -124,7 +121,8 @@ def hierarchy_builder(examples=[], output_file='', entries_number=50, ignore_wor
     ut.isCyclic(topic_object_lst)
     print("after update symmetric relations")
     ut.isCyclic(topic_object_lst)
-    paraphrase_detection_SAP_BERT.combine_equivalent_nodes_by_semantic_DL_model(topic_object_lst, span_to_object,
+    paraphrase_detection_SAP_BERT.combine_equivalent_nodes_by_semantic_DL_model(topic_object_lst.copy(),
+                                                                                topic_object_lst, span_to_object,
                                                                                 dict_object_to_global_label,
                                                                                 global_dict_label_to_object,
                                                                                 span_to_vector)
@@ -169,18 +167,21 @@ def hierarchy_builder(examples=[], output_file='', entries_number=50, ignore_wor
                                                                              global_index_to_similar_longest_np)
     print("finish DAG contraction")
     DAG_utils.remove_redundant_nodes(topic_object_lst)
+    print("remove redundant nodes")
     ut.update_nodes_labels(topic_object_lst)
     DAG_utils.initialize_nodes_weighted_average_vector(topic_object_lst, global_index_to_similar_longest_np,
                                                        span_to_vector)
+    print("Start select top k")
     # Entry-point selection
     top_k_topics, already_counted_labels, all_labels = \
         hierarchical_structure_algorithms.extract_top_k_concept_nodes_greedy_algorithm(entries_number, topic_object_lst,
                                                                                        global_index_to_similar_longest_np)
-    ut.calculation_for_paper(topic_object_lst, top_k_topics)
+    print("Finish select top k")
+    # ut.calculation_for_paper(topic_object_lst, top_k_topics)
     json_dag_visualization.json_dag_visualization(top_k_topics, global_index_to_similar_longest_np,
                                                   taxonomic_np_objects, topic_object_lst)
 
-
+#
 # def get_words_as_span(words):
 #     span = ""
 #     idx = 0
@@ -209,6 +210,7 @@ def hierarchy_builder(examples=[], output_file='', entries_number=50, ignore_wor
 #
 #
 # example_lst = convert_to_input_format('input_files/input_json_files/obesity.json')
+#
 #
 # hierarchy_builder(examples=example_lst, output_file='results/obesity_debug_mode', entries_number=50,
 #                   ignore_words=['cause', 'obesity'])
