@@ -1,6 +1,7 @@
 from hierarchybuilder import utils as ut
 import nltk
 from nltk.corpus import wordnet
+from hierarchybuilder.DAG import DAG_utils as DAG_utils
 
 
 def get_synonyms_by_word(word):
@@ -280,8 +281,20 @@ def initialize_node_weighted_vector(node, span_to_vector):
     node.weighted_average_vector = weighted_average_vector
 
 
+def has_another_path_between_nodes(children, child):
+    rest_children = set(children) - {child}
+    all_descendents = set()
+    has_another_path = False
+    for rest_child in rest_children:
+        get_all_descendents(rest_child, all_descendents)
+        if child in all_descendents:
+            has_another_path = True
+            break
+    return has_another_path
+
+
 def combine_nodes_lst(np_object_lst, span_to_object, dict_object_to_global_label, global_dict_label_to_object,
-                      combined_nodes_lst=set()):
+                      topic_object_lst, combined_nodes_lst=set()):
     first_element = np_object_lst[0]
     length = len(np_object_lst)
     is_combined = False
@@ -290,9 +303,13 @@ def combine_nodes_lst(np_object_lst, span_to_object, dict_object_to_global_label
         if second_element == first_element:
             raise Exception("Parent have duplicate node")
         if second_element in first_element.children:
+            if has_another_path_between_nodes(first_element.children, second_element):
+                continue
             remove_node_parents_edge(first_element, second_element)
             remove_children_which_already_reached(first_element, second_element)
         elif first_element in second_element.children:
+            if has_another_path_between_nodes(second_element.children, first_element):
+                continue
             remove_node_parents_edge(second_element, first_element)
             remove_children_which_already_reached(second_element, first_element)
             second_element = first_element
@@ -304,15 +321,19 @@ def combine_nodes_lst(np_object_lst, span_to_object, dict_object_to_global_label
         combined_nodes_lst.add(second_element)
         first_element.combine_nodes(second_element)
         is_combined = True
-        for span in second_element.span_lst:
-            span_to_object[span] = first_element
-        global_label_lst = dict_object_to_global_label.get(hash(second_element), None)
-        if global_label_lst:
-            dict_object_to_global_label[hash(first_element)] = \
-                dict_object_to_global_label.get(hash(first_element), set())
-            for global_label in global_label_lst:
-                global_dict_label_to_object[global_label] = first_element
-            dict_object_to_global_label[hash(first_element)].update(global_label_lst)
+        DAG_utils.update_global_dictionaries(span_to_object, global_dict_label_to_object,
+                                             dict_object_to_global_label, second_element, first_element)
+        if second_element in topic_object_lst:
+            topic_object_lst.remove(second_element)
+        # for span in second_element.span_lst:
+        #     span_to_object[span] = first_element
+        # global_label_lst = dict_object_to_global_label.get(hash(second_element), None)
+        # if global_label_lst:
+        #     dict_object_to_global_label[hash(first_element)] = \
+        #         dict_object_to_global_label.get(hash(first_element), set())
+        #     for global_label in global_label_lst:
+        #         global_dict_label_to_object[global_label] = first_element
+        #     dict_object_to_global_label[hash(first_element)].update(global_label_lst)
     if is_combined:
         update_all_ancestors_node_was_combined(first_element, first_element.label_lst)
 
@@ -332,19 +353,18 @@ def update_ans_with_remove_link(node, label_lst, visited=set()):
 
 
 def remove_node_parents_edge(node, child):
-    parents_remove_lst = set()
-    for parent in child.parents:
-        if parent == node:
-            parents_remove_lst.add(parent)
-            if child in parent.children:
-                parent.children.remove(child)
-            continue
-        if parent in node.children:
-            parent.children.remove(child)
-            parents_remove_lst.add(parent)
-            update_ans_with_remove_link(parent, child.label_lst)
-    for parent in parents_remove_lst:
-        child.parents.remove(parent)
+    if node in child.parents:
+        child.parents.remove(node)
+    while child not in node.children:
+        node.children.remove(child)
+    # parents_remove_lst = set()
+    # for parent in child.parents:
+    #     if parent in node.children:
+    #         parent.children.remove(child)
+    #         parents_remove_lst.add(parent)
+    #         update_ans_with_remove_link(parent, child.label_lst)
+    # for parent in parents_remove_lst:
+    #     child.parents.remove(parent)
 
 
 def remove_children_which_already_reached(node, combined_node):
@@ -366,14 +386,7 @@ def combine_node_with_equivalent_children(node, equivalent_np_object_lst, span_t
     is_combined = False
     children = set(node.children.copy())
     for child in equivalent_np_object_lst:
-        rest_children = children - set([child])
-        all_descendents = set()
-        has_another_path = False
-        for rest_child in rest_children:
-            get_all_descendents(rest_child, all_descendents)
-            if child in all_descendents:
-                has_another_path = True
-                break
+        has_another_path = has_another_path_between_nodes(children, child)
         if has_another_path:
             continue
         children.remove(child)
@@ -382,17 +395,20 @@ def combine_node_with_equivalent_children(node, equivalent_np_object_lst, span_t
         combined_nodes_lst.add(child)
         node.combine_nodes(child)
         is_combined = True
-        for span in child.span_lst:
-            span_to_object[span] = node
+        # for span in child.span_lst:
+        #     span_to_object[span] = node
+        DAG_utils.update_global_dictionaries(span_to_object, global_dict_label_to_object,
+                                             dict_object_to_global_label, child, node)
         if child in topic_object_lst:
             topic_object_lst.remove(child)
-        global_label_lst = dict_object_to_global_label.get(hash(child), None)
-        if global_label_lst:
-            dict_object_to_global_label[hash(node)] = \
-                dict_object_to_global_label.get(hash(node), set())
-            for global_label in global_label_lst:
-                global_dict_label_to_object[global_label] = node
-            dict_object_to_global_label[hash(node)].update(global_label_lst)
+        # global_label_lst = dict_object_to_global_label.get(hash(child), None)
+        # if global_label_lst:
+        #     dict_object_to_global_label[hash(node)] = \
+        #         dict_object_to_global_label.get(hash(node), set())
+        #     for global_label in global_label_lst:
+        #         global_dict_label_to_object[global_label] = node
+        #     dict_object_to_global_label[hash(node)].update(global_label_lst)
+        # del child
     if is_combined:
         update_all_ancestors_node_was_combined(node, node.label_lst)
         initialize_node_weighted_vector(node, span_to_vector)

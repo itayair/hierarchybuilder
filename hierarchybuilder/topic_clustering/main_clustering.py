@@ -100,10 +100,17 @@ def extend_ignore_words(ignore_words):
         for token in word_as_tokens:
             lemma_word = token.lemma_.lower()
             new_ignore_words.add(lemma_word)
-    ignore_words.update(new_ignore_words)
+    ignore_words.extend(new_ignore_words)
 
 
 def convert_examples_to_clustered_data(examples, ignore_words):
+    utils_clustering.dict_span_to_topic_entry = {}
+    utils_clustering.dict_span_to_rank = {}
+    utils_clustering.dict_noun_lemma_to_counter = {}
+    utils_clustering.dict_noun_lemma_to_examples = {}
+    utils_clustering.dict_noun_lemma_to_noun_words = {}
+    utils_clustering.dict_noun_word_to_counter = {}
+    utils_clustering.dict_noun_lemma_to_span = {}
     dict_noun_lemma_to_synonyms = {}
     span_lst = set()
     dict_span_to_counter = {}
@@ -141,7 +148,6 @@ def convert_examples_to_clustered_data(examples, ignore_words):
                                                                 valid_expansion_utils, counter, valid_span_lst)
     print(counter)
     utils_clustering.synonyms_consolidation(dict_noun_lemma_to_synonyms)
-    # filter_and_sort_dicts()
     dict_lemma_to_synonyms = utils_clustering.create_dicts_for_words_similarity(dict_word_to_lemma)
     dict_lemma_to_synonyms.update(dict_noun_lemma_to_synonyms)
     topics_dict = {k: v for k, v in

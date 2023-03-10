@@ -300,6 +300,14 @@ def is_ancestor_in_S(v, S, visited):
     return False
 
 
+def get_all_nodes(node, visited):
+    for child in node.children:
+        if child in visited:
+            continue
+        visited.add(child)
+        get_all_nodes(child, visited)
+
+
 def extract_top_k_concept_nodes_greedy_algorithm(k, topic_lst, global_index_to_similar_longest_np):
     dist_matrix = {}
     dict_object_to_desc = {}
@@ -313,6 +321,7 @@ def extract_top_k_concept_nodes_greedy_algorithm(k, topic_lst, global_index_to_s
         node.marginal_val = compute_value_for_each_node(node, dist_matrix, dict_object_to_desc, dict_node_to_rep,
                                                         global_index_to_similar_longest_np, topic_lst)
     S = []
+    all_nodes = set()
     heap_data_structure = all_object_np_lst
     heapq.heapify(heap_data_structure)
     already_counted_labels = set()
@@ -320,9 +329,11 @@ def extract_top_k_concept_nodes_greedy_algorithm(k, topic_lst, global_index_to_s
     counter = 0
     while heap_data_structure:
         x = heapq.heappop(heap_data_structure)
-        is_ancestor_already_in_S = is_ancestor_in_S(x, S, set())
-        if is_ancestor_already_in_S:
+        if x in all_nodes:
             continue
+        # is_ancestor_already_in_S = is_ancestor_in_S(x, S, set())
+        # if is_ancestor_already_in_S:
+        #     continue
         marginal_val_x, S_rep_new = calculate_marginal_gain(x, dist_matrix, S_rep, k,
                                                             dict_object_to_desc,
                                                             global_index_to_similar_longest_np, topic_lst)
@@ -344,6 +355,7 @@ def extract_top_k_concept_nodes_greedy_algorithm(k, topic_lst, global_index_to_s
         for key, value in S_rep_new.items():
             S_rep[key] = value
         S.append(x)
+        get_all_nodes(x, all_nodes)
         dist_matrix[hash(k) - hash(x)] = 0
         counter += 1
         dfs_update_marginal_gain([], x, dist_matrix, k)

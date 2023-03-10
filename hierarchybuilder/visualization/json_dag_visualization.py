@@ -22,11 +22,10 @@ def print_flat_list_to_file(concept_to_occurrences):
 
 
 def get_all_labels(nodes, labels, visited=set()):
-    if visited is None:
-        visited = set()
     for node in nodes:
         if node in visited:
             continue
+        visited.add(node)
         labels.update(node.label_lst)
         get_all_labels(node.children, labels, visited)
 
@@ -52,4 +51,5 @@ def json_dag_visualization(top_k_topics, global_index_to_similar_longest_np, tax
     print("Covered labels by selected nodes:", covered_labels)
     with open(ut.etiology + '_' + str(ut.entries_number_limit) + '.txt', 'w') as result_file:
         result_file.write(json.dumps(top_k_topics_as_json))
+    result_file.close()
     print("Done")

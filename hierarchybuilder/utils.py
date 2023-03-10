@@ -16,7 +16,6 @@ model = sapBert_model
 model = model.eval()
 
 dict_span_to_lemma_lst = {}
-dict_noun_lemma_to_examples = {}
 topics_dict = {}
 dict_span_to_counter = {}
 dict_word_to_lemma = {}

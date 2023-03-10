@@ -5,8 +5,8 @@ from hierarchybuilder.combine_spans import utils as combine_spans_utils
 cos = torch.nn.CosineSimilarity(dim=0, eps=1e-08)
 
 
-
-def combine_equivalent_nodes(np_object_lst, span_to_object, dict_object_to_global_label, global_dict_label_to_object):
+def combine_equivalent_nodes(np_object_lst, span_to_object, dict_object_to_global_label, global_dict_label_to_object,
+                             topic_object_lst):
     if len(np_object_lst) <= 1:
         return
     node_vector_lst = []
@@ -23,7 +23,7 @@ def combine_equivalent_nodes(np_object_lst, span_to_object, dict_object_to_globa
         if len(equivalent_nodes) == 1:
             continue
         combine_spans_utils.combine_nodes_lst(equivalent_nodes, span_to_object, dict_object_to_global_label,
-                                              global_dict_label_to_object)
+                                              global_dict_label_to_object, topic_object_lst)
 
 
 def combine_equivalent_node_with_its_equivalent_children(parent, children, span_to_object, dict_object_to_global_label,
@@ -61,13 +61,15 @@ def combine_equivalent_parent_and_children_nodes_by_semantic_DL_model(np_object_
                                                              span_to_vector, visited)
 
 
-def combine_equivalent_nodes_by_semantic_DL_model(np_object_lst, span_to_object, dict_object_to_global_label,
+def combine_equivalent_nodes_by_semantic_DL_model(np_object_lst, topic_object_lst, span_to_object,
+                                                  dict_object_to_global_label,
                                                   global_dict_label_to_object, span_to_vector, visited=set()):
     for np_object in np_object_lst:
         if np_object in visited:
             continue
         visited.add(np_object)
         combine_equivalent_nodes(np_object.children, span_to_object, dict_object_to_global_label,
-                                 global_dict_label_to_object)
-        combine_equivalent_nodes_by_semantic_DL_model(np_object.children, span_to_object, dict_object_to_global_label,
+                                 global_dict_label_to_object, topic_object_lst)
+        combine_equivalent_nodes_by_semantic_DL_model(np_object.children, topic_object_lst, span_to_object,
+                                                      dict_object_to_global_label,
                                                       global_dict_label_to_object, span_to_vector, visited)

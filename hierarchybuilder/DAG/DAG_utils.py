@@ -140,8 +140,7 @@ def update_global_label_with_its_object(global_dict_label_to_object, np_object, 
 
 
 def create_and_insert_nodes_from_sub_groups_of_spans(dict_score_to_collection_of_sub_groups,
-                                                     dict_span_to_lemmas_lst,
-                                                     all_object_np_lst, span_to_object,
+                                                     dict_span_to_lemmas_lst, span_to_object,
                                                      dict_span_to_similar_spans, global_dict_label_to_object,
                                                      dict_object_to_global_label, longest_np_lst,
                                                      objects_longest_nps_from_previous_clusters,
@@ -151,6 +150,7 @@ def create_and_insert_nodes_from_sub_groups_of_spans(dict_score_to_collection_of
     for score, np_to_labels_collection in dict_score_to_collection_of_sub_groups.items():
         for np_key, labels in np_to_labels_collection:
             np_collection = dict_span_to_similar_spans[np_key]
+            np_object = None
             for np in np_collection:
                 np_object = span_to_object.get(np, None)
                 if np_object:
@@ -168,30 +168,27 @@ def create_and_insert_nodes_from_sub_groups_of_spans(dict_score_to_collection_of
         similar_np_object = [None]
         visited = set()
         visited_and_added = set()
-        is_combined_with_exist_node = False
         np_object_temp = np_object
         for longest_nps_node in longest_nps_total_lst:
             if longest_nps_node in visited:
                 continue
             add_NP_to_DAG_bottom_to_up(np_object_temp, longest_nps_node, visited, similar_np_object, visited_and_added)
             if similar_np_object[0]:
-                if hash(np_object) in dict_object_to_global_label:
-                    for label in dict_object_to_global_label[hash(np_object)]:
-                        global_dict_label_to_object[label] = similar_np_object[0]
-                    dict_object_to_global_label[hash(similar_np_object[0])] = \
-                        dict_object_to_global_label.get(hash(similar_np_object[0]), set())
-                    dict_object_to_global_label[hash(similar_np_object[0])].update(
-                        dict_object_to_global_label[hash(np_object)])
-                    dict_object_to_global_label.pop(hash(np_object), None)
-                is_combined_with_exist_node = True
-                for span in np_object.span_lst:
-                    span_to_object[span] = similar_np_object[0]
-                np_object_temp = similar_np_object[0]
-                if np_object_temp:
+                # for span in np_object_temp.span_lst:
+                #     span_to_object[span] = similar_np_object[0]
+                # if hash(np_object_temp) in dict_object_to_global_label:
+                #     for label in dict_object_to_global_label[hash(np_object_temp)]:
+                #         global_dict_label_to_object[label] = similar_np_object[0]
+                #     dict_object_to_global_label[hash(similar_np_object[0])] = \
+                #         dict_object_to_global_label.get(hash(similar_np_object[0]), set())
+                #     dict_object_to_global_label[hash(similar_np_object[0])].update(
+                #         dict_object_to_global_label[hash(np_object_temp)])
+                #     dict_object_to_global_label.pop(hash(np_object_temp), None)
+                update_global_dictionaries(span_to_object, global_dict_label_to_object,
+                                           dict_object_to_global_label, np_object_temp, similar_np_object[0])
+                if similar_np_object[0]:
+                    np_object_temp = similar_np_object[0]
                     break
-                similar_np_object[0] = None
-        if not is_combined_with_exist_node:
-            all_object_np_lst.append(np_object)
         if np_object_temp not in longest_nps_total_lst and np_object_temp.span_lst.intersection(longest_np_lst):
             longest_nps_total_lst.add(np_object)
 
@@ -206,6 +203,20 @@ def remove_topic_np_from_np_object(np_object, topic_np):
         np_object.list_of_span_as_lemmas_lst.remove(lemmas_to_remove)
 
 
+def update_global_dictionaries(span_to_object, global_dict_label_to_object, dict_object_to_global_label,
+                               previous_np_object, new_np_object):
+    for span in previous_np_object.span_lst:
+        span_to_object[span] = new_np_object
+    if hash(previous_np_object) in dict_object_to_global_label:
+        for label in dict_object_to_global_label[hash(previous_np_object)]:
+            global_dict_label_to_object[label] = new_np_object
+        dict_object_to_global_label[hash(new_np_object)] = \
+            dict_object_to_global_label.get(hash(new_np_object), set())
+        dict_object_to_global_label[hash(new_np_object)].update(
+            dict_object_to_global_label[hash(previous_np_object)])
+        dict_object_to_global_label.pop(hash(previous_np_object), None)
+
+
 def combine_topic_object(np_object, topic_object):
     if combine_spans_utils.is_similar_meaning_between_span(topic_object.common_lemmas_in_spans,
                                                            np_object.common_lemmas_in_spans):
@@ -215,16 +226,20 @@ def combine_topic_object(np_object, topic_object):
     return False
 
 
-def create_and_update_topic_object(topic_synonym_lst, span_to_object, longest_NP_to_global_index):
+def create_and_update_topic_object(topic_synonym_lst, span_to_object, longest_NP_to_global_index,
+                                   global_dict_label_to_object, dict_object_to_global_label):
     topic_synonyms_tuples = [(synonym, [synonym]) for synonym in topic_synonym_lst]
     topic_object = NounPhrase.NP(topic_synonyms_tuples, set())
-    for np in topic_object.span_lst:
+    span_lst = topic_object.span_lst.copy()
+    for np in span_lst:
         np_object = span_to_object.get(np, None)
         if np_object:
             if np_object == topic_object:
                 continue
             is_combined = combine_topic_object(np_object, topic_object)
             if is_combined:
+                update_global_dictionaries(span_to_object, global_dict_label_to_object, dict_object_to_global_label,
+                                           topic_object, np_object)
                 topic_object = np_object
             else:
                 print("something is wrong")
@@ -238,7 +253,7 @@ def create_and_update_topic_object(topic_synonym_lst, span_to_object, longest_NP
 
 
 def insert_examples_of_topic_to_DAG(dict_score_to_collection_of_sub_groups, topic_synonym_lst, dict_span_to_lemmas_lst,
-                                    all_object_np_lst, span_to_object, dict_span_to_similar_spans,
+                                    span_to_object, dict_span_to_similar_spans,
                                     global_dict_label_to_object, topic_object_lst,
                                     longest_np_total_lst, longest_np_lst, longest_NP_to_global_index,
                                     dict_object_to_global_label):
@@ -247,14 +262,16 @@ def insert_examples_of_topic_to_DAG(dict_score_to_collection_of_sub_groups, topi
     for longest_np in longest_nps_from_previous_clusters:
         objects_longest_nps_from_previous_clusters.add(span_to_object[longest_np])
     create_and_insert_nodes_from_sub_groups_of_spans(dict_score_to_collection_of_sub_groups,
-                                                     dict_span_to_lemmas_lst, all_object_np_lst,
-                                                     span_to_object, dict_span_to_similar_spans,
+                                                     dict_span_to_lemmas_lst, span_to_object,
+                                                     dict_span_to_similar_spans,
                                                      global_dict_label_to_object, dict_object_to_global_label,
                                                      longest_np_lst, objects_longest_nps_from_previous_clusters,
                                                      longest_NP_to_global_index)
-    topic_object = create_and_update_topic_object(topic_synonym_lst, span_to_object, longest_NP_to_global_index)
+    topic_object = create_and_update_topic_object(topic_synonym_lst, span_to_object, longest_NP_to_global_index,
+                                                  global_dict_label_to_object, dict_object_to_global_label)
     add_dependency_routh_between_longest_np_to_topic(span_to_object, topic_object_lst,
-                                                     longest_np_total_lst, topic_object)
+                                                     longest_np_total_lst, topic_object, dict_object_to_global_label,
+                                                     global_dict_label_to_object)
 
 
 def add_descendants_of_node_to_graph(node, global_index_to_similar_longest_np, new_taxonomic_np_objects,
@@ -305,7 +322,8 @@ def from_DAG_to_JSON(topic_object_lst, global_index_to_similar_longest_np, new_t
 
 
 def add_dependency_routh_between_longest_np_to_topic(span_to_object, topic_object_lst,
-                                                     longest_nps, topic_object):
+                                                     longest_nps, topic_object, dict_object_to_global_label,
+                                                     global_dict_label_to_object):
     visited_and_added = set()
     visited = set()
     for longest_np_span in longest_nps:
@@ -317,9 +335,11 @@ def add_dependency_routh_between_longest_np_to_topic(span_to_object, topic_objec
         similar_np_object = [None]
         add_NP_to_DAG_bottom_to_up(topic_object, np_object, visited, similar_np_object, visited_and_added)
         if similar_np_object[0]:
+            update_global_dictionaries(span_to_object, global_dict_label_to_object, dict_object_to_global_label,
+                                       topic_object, similar_np_object[0])
+            if topic_object in topic_object_lst:
+                topic_object_lst.remove(topic_object)
             topic_object = similar_np_object[0]
-            for span in similar_np_object[0].span_lst:
-                span_to_object[span] = similar_np_object[0]
     for np in topic_object.span_lst:
         span_to_object[np] = topic_object
     if topic_object not in topic_object_lst:
@@ -378,6 +398,9 @@ def update_symmetric_relation_in_DAG(nodes_lst, visited=set()):
             if node not in child.parents:
                 child.parents.add(node)
                 print("node isn't found in its children parents' list")
+                print("Node:")
+                print(node.span_lst)
+                print("Child:")
                 print(child.span_lst)
         for parent in node.parents:
             if node not in parent.children:
@@ -390,7 +413,7 @@ def update_symmetric_relation_in_DAG(nodes_lst, visited=set()):
 def get_frequency_from_labels_lst(global_index_to_similar_longest_np, label_lst):
     num_of_labels = 0
     for label in label_lst:
-        for span in global_index_to_similar_longest_np[label]:
+        for span in global_index_to_similar_longest_np.get(label, []):
             try:
                 num_of_labels += ut.dict_longest_span_to_counter.get(span, 1)
             except:
@@ -481,17 +504,14 @@ def get_labels_of_leaves(children):
     return label_lst
 
 
-counter_error_node = 0
-
-
 def get_leaves_from_DAG(nodes_lst, leaves_lst=set(), visited=set()):  # function for dfs
-    global counter_error_node
-    counter_error_node += 1
     for node in nodes_lst:
         if node not in visited:
             if len(node.children) == 0:
                 leaves_lst.add(node)
             visited.add(node)
+        else:
+            continue
         get_leaves_from_DAG(node.children, leaves_lst, visited)
     return leaves_lst
 
@@ -511,7 +531,7 @@ def remove_redundant_nodes(nodes_lst):
         for parent in parents:
             if parent in ignore_lst:
                 continue
-            if len(parent.children) == 1 and parent.label_lst == s.label_lst:
+            if len(set(parent.children)) == 1 and parent.label_lst == s.label_lst:
                 if parent.parents:
                     for ancestor in parent.parents:
                         ancestor.add_children([s])
@@ -529,14 +549,13 @@ def remove_redundant_nodes(nodes_lst):
                         s.parents.remove(parent)
                     if s in parent.children:
                         parent.children.remove(s)
+                    queue.append(s)
                 else:
                     ignore_lst.append(parent)
-                    s.parents.remove(parent)
-                    parent.children.remove(s)
+                    if parent in s.parents:
+                        s.parents.remove(parent)
                     if parent in nodes_lst:
                         nodes_lst.remove(parent)
-                    else:
-                        continue
                     if not s.parents:
                         nodes_lst.append(s)
                         break
