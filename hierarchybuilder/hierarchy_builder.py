@@ -181,7 +181,7 @@ def hierarchy_builder(examples=[], output_file='', entries_number=50, ignore_wor
     json_dag_visualization.json_dag_visualization(top_k_topics, global_index_to_similar_longest_np,
                                                   taxonomic_np_objects, topic_object_lst)
 
-#
+
 # def get_words_as_span(words):
 #     span = ""
 #     idx = 0

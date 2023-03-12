@@ -28,6 +28,20 @@ setuptools.setup(
     #     'scikit-learn==1.2.0',
     #     'sklearn==0.0.post1'
     # ],
+    install_requires=[
+        'fastapi==0.94.0',
+        'nltk==3.8.1',
+        'pandas==1.5.3',
+        'quantulum3==0.8.1',
+        'requests==2.28.2',
+        'scikit_learn==1.2.2',
+        'setuptools==60.2.0',
+        'spacy==3.0.9',
+        'torch==1.13.1',
+        'tqdm==4.64.1',
+        'transformers==4.26.1',
+        'uvicorn==0.21.0'
+    ],
     dependency_links=['en-ud-model-sm @ https://storage.googleapis.com/en_ud_model/en_ud_model_sm-2.0.0.tar.gz'],
     project_urls={
         "Bug Tracker": "https://github.com/itayair/hierarchybuilder/-/issues",
