@@ -10,7 +10,7 @@ dict_explicit_relation_type_between_terms = {}
 umls_loader = None
 
 
-def parse_args(umls_relation_file_path='../UMLS_data/MRREL.RRF', umls_synonymous_file_path='../UMLS_data/MRCONSO.RRF'):
+def parse_args(umls_relation_file_path, umls_synonymous_file_path):
     parser = argparse.ArgumentParser()
     parser.add_argument('--umls_dict_dir', type=str,
                         default=umls_synonymous_file_path,
@@ -86,7 +86,7 @@ class UMLSLoader(metaclass=Singleton):
                 if row['LAT'] != 'ENG':
                     continue
                 if not ENG_is_valid:
-                    print("ENG is valid ENTRY")
+                    # print("ENG is valid ENTRY")
                     ENG_is_valid = True
                 dict_id_to_similar_concepts[row['CUI']] = dict_id_to_similar_concepts.get(row['CUI'], set())
                 dict_id_to_similar_concepts[row['CUI']].add(row['STR'])
@@ -119,7 +119,7 @@ class UMLSLoader(metaclass=Singleton):
         return set()
 
 
-def load_umls_data():
+def load_umls_data(umls_relation_file_path, umls_synonymous_file_path):
     global umls_loader
-    args = parse_args()
+    args = parse_args(umls_relation_file_path, umls_synonymous_file_path)
     umls_loader = UMLSLoader(args.umls_dict_dir, args.umls_relation_dir)

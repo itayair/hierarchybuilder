@@ -9,7 +9,7 @@ import statistics
 cos = torch.nn.CosineSimilarity(dim=0, eps=1e-08)
 nlp = parse_medical_data.nlp
 device = torch.device("cpu")
-#device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
+# device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
 sapBert_tokenizer = AutoTokenizer.from_pretrained('cambridgeltl/SapBERT-from-PubMedBERT-fulltext')
 sapBert_model = AutoModel.from_pretrained('cambridgeltl/SapBERT-from-PubMedBERT-fulltext')
 model = sapBert_model
@@ -27,13 +27,16 @@ dict_noun_lemma_to_counter = {}
 dict_noun_word_to_counter = {}
 etiology = 'etiology'
 entries_number_limit = 50
+host_and_port = "127.0.0.1:5000"
 
 
-def initialize_data(examples, ignore_words=None, output_file='', entries_number=50,
+def initialize_data(examples, host_val, port_val, ignore_words=None, output_file='', entries_number=50,
                     device_type=""):
     global topics_dict, dict_span_to_counter, dict_word_to_lemma, dict_lemma_to_synonyms, \
         dict_longest_span_to_counter, dict_noun_lemma_to_synonyms, dict_noun_lemma_to_noun_words, \
-        dict_noun_lemma_to_counter, dict_noun_word_to_counter, etiology, entries_number_limit, device, model
+        dict_noun_lemma_to_counter, dict_noun_word_to_counter, etiology, entries_number_limit, device, model, \
+        host_and_port
+    host_and_port = "https://" + host_val + ":" + str(port_val)
     if device_type:
         device = device_type
         model = model.to(device)
@@ -53,7 +56,8 @@ def initialize_data(examples, ignore_words=None, output_file='', entries_number=
     collection_format_examples = parse_medical_data.get_examples_as_all_optional_answers_format(examples)
     topics_dict, dict_span_to_counter, dict_word_to_lemma, dict_lemma_to_synonyms, \
     dict_longest_span_to_counter, dict_noun_lemma_to_synonyms, dict_noun_lemma_to_noun_words, dict_noun_lemma_to_counter, \
-    dict_noun_word_to_counter = main_clustering.convert_examples_to_clustered_data(collection_format_examples, ignore_words)
+    dict_noun_word_to_counter = main_clustering.convert_examples_to_clustered_data(collection_format_examples,
+                                                                                   ignore_words, host_and_port)
     dict_span_to_counter.update(dict_noun_word_to_counter)
     dict_span_to_counter.update(dict_noun_lemma_to_counter)
 

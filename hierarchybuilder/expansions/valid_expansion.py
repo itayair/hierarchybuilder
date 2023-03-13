@@ -293,9 +293,7 @@ def get_children_expansion(sub_np_lst, lst_children, boundary_np_to_the_left, he
                 is_follow_by_conj_token = True
         if child.text.endswith("-") or child.text.endswith("/") or is_follow_by_conj_token:
             follow_token = get_follow_token(lst_children, child)
-            if not follow_token:
-                print("follow token not found")
-            else:
+            if follow_token:
                 seq_tokens = [child, follow_token]
                 if is_follow_by_conj_token:
                     follow_conj_token = get_follow_token(lst_children, follow_token)
@@ -320,7 +318,7 @@ def get_children_expansion(sub_np_lst, lst_children, boundary_np_to_the_left, he
                 sub_np_lst.extend(sub_np)
         else:
             if child.dep_ not in ['nsubj']:
-                print(child.dep_)
+                continue
     set_couple_deps(seq_dict, boundary_np_to_the_left, sub_np_lst, head)
 
 

@@ -34,6 +34,7 @@ def get_broader_terms(terms: str, relation_type: str):
     return {"broader_terms": broader_terms}
 
 
-def create_umls_server():
-    umls_loader.load_umls_data()
-    uvicorn.run(app, host="127.0.0.1", port=5000, log_level="info")
+def create_umls_server(host_val="127.0.0.1", port_val=5000, umls_relation_file_path='../UMLS_data/MRREL.RRF',
+                       umls_synonymous_file_path='../UMLS_data/MRCONSO.RRF'):
+    umls_loader.load_umls_data(umls_relation_file_path, umls_synonymous_file_path)
+    uvicorn.run(app, host=host_val, port=port_val, log_level="info")

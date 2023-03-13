@@ -5,7 +5,6 @@ import hierarchybuilder.visualization.json_dag_visualization as json_dag_visuali
 import hierarchybuilder.DAG.DAG_utils as DAG_utils
 from hierarchybuilder.taxonomy import taxonomies_from_UMLS
 import sys
-import json
 
 sys.setrecursionlimit(10000)
 
@@ -68,8 +67,10 @@ def get_uncounted_examples(example_list, global_longest_np_lst, dict_global_long
            dict_uncounted_expansions, dict_counted_longest_answers
 
 
-def hierarchy_builder(examples=[], output_file='', entries_number=50, ignore_words=None, device_type=""):
-    ut.initialize_data(examples, ignore_words, output_file, entries_number, device_type)
+def hierarchy_builder(examples=None, output_file='', entries_number=50, ignore_words=None, device_type="", host="127.0.0.1", port=5000):
+    if examples is None:
+        examples = []
+    ut.initialize_data(examples, host, port, ignore_words, output_file, entries_number, device_type)
     dict_span_to_rank = {}
     dict_span_to_lemma_lst = ut.dict_span_to_lemma_lst
     global_dict_label_to_object = {}
@@ -83,11 +84,8 @@ def hierarchy_builder(examples=[], output_file='', entries_number=50, ignore_wor
     dict_global_longest_np_to_all_counted_expansions = {}
     global_longest_np_index = [0]
     longest_NP_to_global_index = {}
-    counter = 0
-    print(len(ut.topics_dict.keys()))
+    # print("Start the detection of equivalent spans by BOW + building the DAG")
     for topic, examples_list in ut.topics_dict.items():
-        print(counter)
-        print(topic)
         topic_synonym_lst = set(ut.dict_noun_lemma_to_synonyms[topic])
         for synonym in topic_synonym_lst:
             dict_span_to_rank[synonym] = 1
@@ -110,74 +108,56 @@ def hierarchy_builder(examples=[], output_file='', entries_number=50, ignore_wor
                                                   global_dict_label_to_object, topic_object_lst, longest_np_total_lst,
                                                   longest_np_lst, longest_NP_to_global_index,
                                                   dict_object_to_global_label)
-    ut.isCyclic(topic_object_lst)
-    print("after the main loop")
+    print("End the detection of equivalent spans by BOW + building the DAG")
     ut.get_all_spans(topic_object_lst, all_spans)
     all_spans = list(all_spans)
     DAG_utils.initialize_all_spans_vectors(all_spans, span_to_vector)
     DAG_utils.initialize_nodes_weighted_average_vector(topic_object_lst, global_index_to_similar_longest_np,
                                                        span_to_vector)
     DAG_utils.update_symmetric_relation_in_DAG(topic_object_lst)
-    ut.isCyclic(topic_object_lst)
-    print("after update symmetric relations")
-    ut.isCyclic(topic_object_lst)
+    # print("Start to detect equivalent nodes by DL model")
     paraphrase_detection_SAP_BERT.combine_equivalent_nodes_by_semantic_DL_model(topic_object_lst.copy(),
                                                                                 topic_object_lst, span_to_object,
                                                                                 dict_object_to_global_label,
                                                                                 global_dict_label_to_object,
                                                                                 span_to_vector)
-    ut.isCyclic(topic_object_lst)
-    print("END combine equivalent nodes by DL model")
+    print("End to detect equivalent nodes among children of each node by DL model")
     DAG_utils.update_symmetric_relation_in_DAG(topic_object_lst)
-    ut.isCyclic(topic_object_lst)
-    print("after update symmetric relations")
     combine_nodes_UMLS.combine_nodes_by_umls_synonymous_spans(span_to_object, dict_object_to_global_label,
                                                               global_dict_label_to_object, topic_object_lst,
                                                               span_to_vector)
-    ut.isCyclic(topic_object_lst)
-    print("END combine equivalent nodes by UMLS")
     ut.update_nodes_labels(topic_object_lst)
     DAG_utils.update_symmetric_relation_in_DAG(topic_object_lst)
-    ut.isCyclic(topic_object_lst)
-    print("after update symmetric relations")
     DAG_utils.initialize_nodes_weighted_average_vector(topic_object_lst, global_index_to_similar_longest_np,
                                                        span_to_vector)
     # Adding taxonomic nodes
     taxonomic_np_objects = taxonomies_from_UMLS.add_taxonomies_to_DAG_by_UMLS(topic_object_lst, dict_span_to_rank,
                                                                               span_to_object, span_to_vector)
-    ut.isCyclic(topic_object_lst)
-    print("END use in UMLS for taxonomic and equivalent nodes")
+    print("End to detect equivalent nodes and taxonomic relations by UMLS")
     DAG_utils.update_symmetric_relation_in_DAG(topic_object_lst)
-    ut.isCyclic(topic_object_lst)
-    print("after update symmetric relations")
     DAG_utils.initialize_nodes_weighted_average_vector(topic_object_lst, global_index_to_similar_longest_np,
                                                        span_to_vector)
     paraphrase_detection_SAP_BERT.combine_equivalent_parent_and_children_nodes_by_semantic_DL_model(
         topic_object_lst.copy(), span_to_object, dict_object_to_global_label, global_dict_label_to_object,
         topic_object_lst, span_to_vector)
-    ut.isCyclic(topic_object_lst)
-    print("finish combine parent children nodes by DL models")
+    print("End to detect close in meaning children and parent nodes by DL model")
     DAG_utils.update_symmetric_relation_in_DAG(topic_object_lst)
-    ut.isCyclic(topic_object_lst)
-    print("after update symmetric relations")
     ut.update_nodes_labels(topic_object_lst)
     # DAG Pruning
     hierarchical_structure_algorithms.DAG_contraction_by_set_cover_algorithm(topic_object_lst,
                                                                              global_dict_label_to_object,
                                                                              global_index_to_similar_longest_np)
-    print("finish DAG contraction")
+    print("Finish DAG contraction")
     DAG_utils.remove_redundant_nodes(topic_object_lst)
-    print("remove redundant nodes")
+    print("Remove redundant nodes")
     ut.update_nodes_labels(topic_object_lst)
     DAG_utils.initialize_nodes_weighted_average_vector(topic_object_lst, global_index_to_similar_longest_np,
                                                        span_to_vector)
-    print("Start select top k")
     # Entry-point selection
     top_k_topics, already_counted_labels, all_labels = \
         hierarchical_structure_algorithms.extract_top_k_concept_nodes_greedy_algorithm(entries_number, topic_object_lst,
                                                                                        global_index_to_similar_longest_np)
     print("Finish select top k")
-    # ut.calculation_for_paper(topic_object_lst, top_k_topics)
     json_dag_visualization.json_dag_visualization(top_k_topics, global_index_to_similar_longest_np,
                                                   taxonomic_np_objects, topic_object_lst)
 

@@ -13,7 +13,7 @@ def create_dict_RB_to_objects_lst(dict_RB_to_objects, np_object, visited, relati
     visited.add(np_object)
     try:
         post_data = json.dumps(list(np_object.span_lst))
-        dict_response = requests.post('http://127.0.0.1:5000/get_broader_terms/',
+        dict_response = requests.post(ut.host_and_port + '/get_broader_terms/',
                                       params={"terms": post_data, "relation_type": relation_type},
                                       timeout=3)
         output = dict_response.json()
@@ -26,7 +26,6 @@ def create_dict_RB_to_objects_lst(dict_RB_to_objects, np_object, visited, relati
             dict_RB_to_objects[term].add(np_object)
     except Exception as e:
         print(e)
-        print(np_object.span_lst)
     for child in np_object.children:
         create_dict_RB_to_objects_lst(dict_RB_to_objects, child, visited)
 
@@ -234,17 +233,17 @@ def initialize_nodes_weighted_average_vector(nodes_lst, global_index_to_similar_
 def add_taxonomies_to_DAG_by_UMLS(topic_objects, dict_span_to_rank, dict_span_to_object, span_to_vector):
     dict_RB_to_objects, dict_span_to_equivalent = initialize_taxonomic_relations(topic_objects)
     # Find exist np objects that represent the taxonomic relation
-    print("End initialization of taxonomic relations")
+    # print("End initialization of taxonomic relations")
     dict_RB_exist_objects, added_edges, added_taxonomic_relation, covered_labels_by_new_topics = \
         detect_and_update_existing_object_represent_taxonomic_relation(dict_RB_to_objects, dict_span_to_equivalent,
                                                                        dict_span_to_object)
     ut.isCyclic(topic_objects)
-    print("End detect and update existing object represent taxonomic relation")
+    # print("End detect and update existing object represent taxonomic relation")
     DAG_utils.update_symmetric_relation_in_DAG(topic_objects)
     new_taxonomic_np_objects = create_and_add_new_taxonomic_object_to_DAG(dict_RB_exist_objects,
                                                                           dict_RB_to_objects, dict_span_to_equivalent,
                                                                           dict_span_to_rank, span_to_vector)
-    print("End create and add new taxonomic object to DAG")
+    # print("End create and add new taxonomic object to DAG")
     topic_objects.extend(new_taxonomic_np_objects)
     # covered_by_taxonomic_relation(new_taxonomic_np_objects, added_edges, added_taxonomic_relation,
     #                               covered_labels_by_new_topics)

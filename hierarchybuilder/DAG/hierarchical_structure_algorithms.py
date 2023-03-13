@@ -71,9 +71,9 @@ def get_value_by_cosineSimilarity_format(global_index_to_similar_longest_np, cur
     try:
         cos_similarity_val = cos(current_node.weighted_average_vector, main_node.weighted_average_vector)
     except:
-        print("Error in weighted_average_vector")
-        print(current_node.span_lst)
-        print(current_node.list_of_span_as_lemmas_lst)
+        # print("Error in weighted_average_vector")
+        # print(current_node.span_lst)
+        # print(current_node.list_of_span_as_lemmas_lst)
         cos_similarity_val = 0.5
     frequency = DAG_utils.get_frequency_from_labels_lst(global_index_to_similar_longest_np,
                                                         current_node.label_lst)
@@ -176,10 +176,8 @@ def remove_unselected_np_objects(parent_np_object, selected_np_objects):
     for child in parent_np_object.children:
         if child not in selected_np_objects:
             remove_lst.append(child)
-            try:
+            if parent_np_object in child.parents:
                 child.parents.remove(parent_np_object)
-            except:
-                print(parent_np_object)
     for node in remove_lst:
         if node.frequency > 1:
             common_span_remove_lst.append(node)
@@ -198,9 +196,10 @@ def set_cover(children, np_object_parent, global_index_to_similar_longest_np):
             np_object = max(children, key=lambda np_object: DAG_utils.get_frequency_from_labels_lst(
                 global_index_to_similar_longest_np, np_object.label_lst - covered), default=None)
         except:
-            for child in children:
-                print(child.span_lst)
-                raise Exception("There is error in the max function")
+            # for child in children:
+            #     print(child.span_lst)
+            #     raise Exception("There is error in the max function")
+            continue
         if not np_object:
             break
         if DAG_utils.get_frequency_from_labels_lst(
@@ -219,9 +218,7 @@ def add_longest_nps_to_np_object_children(topic_object, labels, global_dict_labe
         try:
             longest_nps_lst.add(global_dict_label_to_object[label])
         except:
-            print("label isn't updated")
-            print(label)
-            # raise Exception("label isn't updated")
+            continue
     topic_object.add_children(longest_nps_lst)
     for longest_np in longest_nps_lst:
         if longest_np == topic_object:

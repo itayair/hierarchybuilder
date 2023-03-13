@@ -1,8 +1,6 @@
 from hierarchybuilder.topic_clustering import utils_clustering
 from hierarchybuilder.expansions import valid_expansion_utils
 from hierarchybuilder.expansions import parse_medical_data
-import json
-import requests
 
 
 def filter_and_sort_dicts():
@@ -83,16 +81,6 @@ def replace_abbreviation_with_elaboration(dict_abbreviation_to_elaboration, dict
             dict_noun_lemma_to_examples[word.lemma_lower()].extend(example_lst_abbreviation_new)
 
 
-def find_match_for_abbreviation(abbreviation_lst, dict_noun_compound_to_lst, dict_abbreviation_to_elaboration):
-    abbreviation_lst_as_json = json.dumps(list(abbreviation_lst))
-    compound_lst_as_json = json.dumps(list(dict_noun_compound_to_lst.keys()))
-    dict_response = requests.post('http://127.0.0.1:5000/create_abbreviation_dict/',
-                                  params={"abbreviations": abbreviation_lst_as_json,
-                                          "compound_lst": compound_lst_as_json})
-    dict_abbreviation_to_compound = dict_response.json()["dict_abbreviation_to_compound"]
-    dict_abbreviation_to_elaboration.update(dict_abbreviation_to_compound)
-
-
 def extend_ignore_words(ignore_words):
     new_ignore_words = set()
     for word in ignore_words:
@@ -103,7 +91,7 @@ def extend_ignore_words(ignore_words):
     ignore_words.extend(new_ignore_words)
 
 
-def convert_examples_to_clustered_data(examples, ignore_words):
+def convert_examples_to_clustered_data(examples, ignore_words, host_and_port):
     utils_clustering.dict_span_to_topic_entry = {}
     utils_clustering.dict_span_to_rank = {}
     utils_clustering.dict_noun_lemma_to_counter = {}
@@ -147,8 +135,8 @@ def convert_examples_to_clustered_data(examples, ignore_words):
                                                                 dict_span_to_counter,
                                                                 valid_expansion_utils, counter, valid_span_lst)
     print(counter)
-    utils_clustering.synonyms_consolidation(dict_noun_lemma_to_synonyms)
-    dict_lemma_to_synonyms = utils_clustering.create_dicts_for_words_similarity(dict_word_to_lemma)
+    utils_clustering.create_synonym_dicts(dict_noun_lemma_to_synonyms, host_and_port)
+    dict_lemma_to_synonyms = utils_clustering.create_dicts_for_words_similarity(dict_word_to_lemma, host_and_port)
     dict_lemma_to_synonyms.update(dict_noun_lemma_to_synonyms)
     topics_dict = {k: v for k, v in
                    sorted(utils_clustering.dict_noun_lemma_to_examples.items(), key=lambda item: len(item[1]),

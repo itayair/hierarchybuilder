@@ -84,8 +84,8 @@ def initialize_token_expansions_information(all_valid_nps_lst, token, lemma_word
             dict_span_to_rank[np_span] = sub_span[1]
             lemma_lst = from_tokens_to_lemmas(sub_span[0])
             expansions_contain_word.append((np_span, sub_span[1], lemma_lst))
-    if lemma_word == 'null':
-        print("something is strange")
+    # if lemma_word == 'null':
+    #     print("something is strange")
     dict_noun_lemma_to_examples[lemma_word] = dict_noun_lemma_to_examples.get(lemma_word, [])
     dict_noun_lemma_to_examples[lemma_word].append((span, expansions_contain_word))
     dict_noun_lemma_to_counter[lemma_word] = dict_noun_lemma_to_counter.get(lemma_word, 0)
@@ -175,7 +175,7 @@ def get_synonyms_by_word(word):
     return synonyms
 
 
-def create_dicts_for_words_similarity(dict_word_to_lemma):
+def create_dicts_for_words_similarity(dict_word_to_lemma, host_and_port):
     dict_lemma_to_synonyms = {}
     lemma_lst = set()
     for _, lemma in dict_word_to_lemma.items():
@@ -186,33 +186,34 @@ def create_dicts_for_words_similarity(dict_word_to_lemma):
         synonyms.append(lemma)
         dict_lemma_to_synonyms[lemma] = set(synonyms)
     word_lst = list(lemma_lst)
-    update_dictionary_umls_synonyms(dict_lemma_to_synonyms, word_lst)
+    update_dictionary_umls_synonyms(dict_lemma_to_synonyms, word_lst, host_and_port)
     dict_lemma_to_synonyms = {k: v for k, v in
                               sorted(dict_lemma_to_synonyms.items(), key=lambda item: len(item[1]),
                                      reverse=True)}
     return dict_lemma_to_synonyms
 
 
-def update_dictionary_umls_synonyms(dict_word_to_synonyms, word_lst):
+def update_dictionary_umls_synonyms(dict_word_to_synonyms, word_lst, host_and_port):
     for i in range(0, len(word_lst), 100):
         chunk = word_lst[i: i + 100]
         if 'null' in chunk:
             chunk.remove('null')
         try:
             post_data = json.dumps(chunk)
-            dict_response = requests.post('http://127.0.0.1:5000/create_synonyms_dictionary/', params={"words": post_data})
+            dict_response = requests.post(host_and_port + '/create_synonyms_dictionary/',
+                                          params={"words": post_data})
             output = dict_response.json()["synonyms"]
             dict_word_to_synonyms.update(output)
         except:
             for word in chunk:
                 try:
                     post_data = json.dumps([word])
-                    dict_response = requests.post('http://127.0.0.1:5000/create_synonyms_dictionary/',
+                    dict_response = requests.post(host_and_port + '/create_synonyms_dictionary/',
                                                   params={"words": post_data})
                     output = dict_response.json()["synonyms"]
                     dict_word_to_synonyms.update(output)
                 except:
-                    print("this word is problematic: " + word)
+                    continue
     for noun, synonyms in dict_word_to_synonyms.items():
         remove_lst = set()
         for synonym in synonyms:
@@ -222,7 +223,7 @@ def update_dictionary_umls_synonyms(dict_word_to_synonyms, word_lst):
             synonyms.remove(synonym)
 
 
-def synonyms_consolidation(dict_noun_lemma_to_synonyms):
+def create_synonym_dicts(dict_noun_lemma_to_synonyms, host_and_port):
     global dict_noun_lemma_to_examples, dict_noun_lemma_to_counter
     dict_noun_lemma_to_examples_new = {}
     dict_noun_lemma_to_counter_new = {}
@@ -230,7 +231,7 @@ def synonyms_consolidation(dict_noun_lemma_to_synonyms):
                                    sorted(dict_noun_lemma_to_examples.items(), key=lambda item: len(item[1]),
                                           reverse=True)}
     word_lst = list(dict_noun_lemma_to_examples.keys())
-    update_dictionary_umls_synonyms(dict_noun_lemma_to_synonyms, word_lst)
+    update_dictionary_umls_synonyms(dict_noun_lemma_to_synonyms, word_lst, host_and_port)
     for word, synonyms in dict_noun_lemma_to_synonyms.items():
         dict_noun_lemma_to_examples_new[word] = []
         dict_noun_lemma_to_examples_new[word].extend(dict_noun_lemma_to_examples[word])

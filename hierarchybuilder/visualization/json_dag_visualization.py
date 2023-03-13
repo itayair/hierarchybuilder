@@ -36,11 +36,8 @@ def json_dag_visualization(top_k_topics, global_index_to_similar_longest_np, tax
     top_k_topics_as_json = DAG_utils.from_DAG_to_JSON(top_k_topics, global_index_to_similar_longest_np,
                                                       taxonomic_np_objects, different_concepts,
                                                       concept_to_occurrences)
-    print(len(different_concepts))
     top_k_labels = set()
     get_all_labels(top_k_topics, top_k_labels, visited=set())
-    print("Number of different results covered by the k topics:")
-    print(len(top_k_labels))
     covered_labels = DAG_utils.get_frequency_from_labels_lst(global_index_to_similar_longest_np,
                                                              top_k_labels)
     labels_of_topics = set()

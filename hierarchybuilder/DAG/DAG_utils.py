@@ -45,9 +45,9 @@ def add_NP_to_DAG_bottom_to_up(np_object_to_add, np_object, visited, similar_np_
         return False
     visited.add(np_object)
     if not np_object_to_add.common_lemmas_in_spans:
-        print("Empty node")
-        print(np_object_to_add.span_lst)
-        print(np_object_to_add.lemma_to_occurrences_dict)
+        # print("Empty node")
+        # print(np_object_to_add.span_lst)
+        # print(np_object_to_add.lemma_to_occurrences_dict)
         return False
     if combine_spans_utils.is_similar_meaning_between_span(np_object_to_add.common_lemmas_in_spans,
                                                            np_object.common_lemmas_in_spans):
@@ -75,7 +75,7 @@ def add_NP_to_DAG_bottom_to_up(np_object_to_add, np_object, visited, similar_np_
                     if np_object_to_add not in parent.children:
                         parent.children.append(np_object_to_add)
                     else:
-                        print("this is wrong insertion")
+                        continue
                     parents_remove_lst.add(parent)
             for parent_object in parents_remove_lst:
                 np_object.parents.remove(parent_object)
@@ -129,7 +129,6 @@ def update_global_label_with_its_object(global_dict_label_to_object, np_object, 
         if span in longest_np_lst:
             label = longest_NP_to_global_index.get(span, -1)
             if label == -1:
-                print("not consistant global label with longest np")
                 continue
             global_indices_in_np_object.add(label)
     uncounted_global_labels = uncounted_labels.intersection(global_indices_in_np_object)
@@ -242,7 +241,6 @@ def create_and_update_topic_object(topic_synonym_lst, span_to_object, longest_NP
                                            topic_object, np_object)
                 topic_object = np_object
             else:
-                print("something is wrong")
                 remove_topic_np_from_np_object(np_object, np)
     for np in topic_object.span_lst:
         span_to_object[np] = topic_object
@@ -426,21 +424,22 @@ def initialize_node_weighted_vector(node, span_to_vector):
     if not node.span_lst:
         return
     is_first = True
+    weighted_average_vector = torch.zeros(768, 1)
     for np in node.span_lst:
         if is_first:
             is_first = False
             span_vector = span_to_vector.get(np, None)
             if span_vector is None:
-                print("the following span is none")
-                print(np)
-                weighted_average_vector = torch.zeros(768, 1)
+                # print("the following span is none")
+                # print(np)
+                # weighted_average_vector = torch.zeros(768, 1)
                 continue
             weighted_average_vector = span_vector
         else:
             span_vector = span_to_vector.get(np, None)
             if span_vector is None:
-                print("the following span is none")
-                print(np)
+                # print("the following span is none")
+                # print(np)
                 continue
             weighted_average_vector += span_vector
     weighted_average_vector /= len(node.span_lst)

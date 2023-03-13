@@ -1,6 +1,7 @@
 import requests
 import json
 from hierarchybuilder.combine_spans import utils as combine_spans_utils
+import hierarchybuilder.utils as ut
 
 
 def combine_nodes_by_umls_synonymous_spans_dfs_helper(topic_object_lst, dict_span_to_object, np_object, visited,
@@ -11,7 +12,7 @@ def combine_nodes_by_umls_synonymous_spans_dfs_helper(topic_object_lst, dict_spa
     visited.add(np_object)
     equivalent_object_lst = set()
     post_data = json.dumps(list(np_object.span_lst))
-    dict_response = requests.post('http://127.0.0.1:5000/create_synonyms_dictionary/',
+    dict_response = requests.post(ut.host_and_port + '/create_synonyms_dictionary/',
                                   params={"words": post_data}, timeout=3)
     try:
         output = dict_response.json()

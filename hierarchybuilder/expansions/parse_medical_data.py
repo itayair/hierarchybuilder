@@ -86,8 +86,8 @@ def get_examples_as_all_optional_answers_format(examples):
         sentence, span = example
         sentence, span, sent_as_doc, span_as_doc = get_sentence_ans_span_from_format(sentence, span)
         if sent_as_doc is None:
-            print(sentence)
-            print(span)
+            # print(sentence)
+            # print(span)
             continue
         head_of_span = valid_expansion_utils.get_head_of_span(span_as_doc)
         if head_of_span is None:
