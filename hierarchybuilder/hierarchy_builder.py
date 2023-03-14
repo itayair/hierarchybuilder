@@ -149,7 +149,7 @@ def hierarchy_builder(examples=None, output_file='', entries_number=50, ignore_w
                                                                              global_index_to_similar_longest_np)
     print("Finish DAG contraction")
     DAG_utils.remove_redundant_nodes(topic_object_lst)
-    print("Remove redundant nodes")
+    print("Redundant nodes were removed")
     ut.update_nodes_labels(topic_object_lst)
     DAG_utils.initialize_nodes_weighted_average_vector(topic_object_lst, global_index_to_similar_longest_np,
                                                        span_to_vector)

@@ -36,7 +36,7 @@ def initialize_data(examples, host_val, port_val, ignore_words=None, output_file
         dict_longest_span_to_counter, dict_noun_lemma_to_synonyms, dict_noun_lemma_to_noun_words, \
         dict_noun_lemma_to_counter, dict_noun_word_to_counter, etiology, entries_number_limit, device, model, \
         host_and_port
-    host_and_port = "https://" + host_val + ":" + str(port_val)
+    host_and_port = "http://" + host_val + ":" + str(port_val)
     if device_type:
         device = device_type
         model = model.to(device)
