@@ -119,7 +119,7 @@ class UMLSLoader(metaclass=Singleton):
         return set()
 
 
-def load_umls_data(umls_relation_file_path, umls_synonymous_file_path):
+def load_umls_data(umls_relations_file_path, umls_synonymous_file_path):
     global umls_loader
-    args = parse_args(umls_relation_file_path, umls_synonymous_file_path)
+    args = parse_args(umls_relations_file_path, umls_synonymous_file_path)
     umls_loader = UMLSLoader(args.umls_dict_dir, args.umls_relation_dir)

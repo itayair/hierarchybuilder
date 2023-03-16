@@ -67,10 +67,9 @@ def get_uncounted_examples(example_list, global_longest_np_lst, dict_global_long
            dict_uncounted_expansions, dict_counted_longest_answers
 
 
-def hierarchy_builder(examples=None, output_file='', entries_number=50, ignore_words=None, device_type="", host="127.0.0.1", port=5000):
-    if examples is None:
-        examples = []
-    ut.initialize_data(examples, host, port, ignore_words, output_file, entries_number, device_type)
+def hierarchy_builder(examples, output_file_name='output', entries_number=50, ignore_words=None, device="", host="127.0.0.1",
+                      port=5000):
+    ut.initialize_data(examples, host, port, ignore_words, output_file_name, entries_number, device)
     dict_span_to_rank = {}
     dict_span_to_lemma_lst = ut.dict_span_to_lemma_lst
     global_dict_label_to_object = {}

@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="hierarchybuilder",
-    version="0.1.4",
+    version="0.0.3",
     author="Itay Yair",
     author_email="iy24592@gmail.com",
     description="implementation of hierarchy builder",
@@ -19,15 +19,14 @@ setuptools.setup(
         'pandas==1.5.3',
         'quantulum3==0.8.1',
         'requests==2.28.2',
-        'scikit_learn==1.2.2',
-        # 'setuptools==60.2.0',
-        'spacy==3.0.69',
+        'scikit_learn==1.2.0',
+        'setuptools==60.2.0',
+        'spacy==3.0.9',
         'torch==1.13.1',
         'tqdm==4.64.1',
         'transformers==4.26.1',
         'uvicorn==0.21.0'
     ],
-    dependency_links=['en-ud-model-sm @ https://storage.googleapis.com/en_ud_model/en_ud_model_sm-2.0.0.tar.gz'],
     project_urls={
         "Bug Tracker": "https://github.com/itayair/hierarchybuilder/-/issues",
     },

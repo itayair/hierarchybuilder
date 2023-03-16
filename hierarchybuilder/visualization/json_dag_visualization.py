@@ -46,7 +46,7 @@ def json_dag_visualization(top_k_topics, global_index_to_similar_longest_np, tax
                                                                      labels_of_topics)
     print("total labels of topics:", total_labels_of_topics)
     print("Covered labels by selected nodes:", covered_labels)
-    with open(ut.etiology + '_' + str(ut.entries_number_limit) + '.txt', 'w') as result_file:
+    with open(ut.etiology + '.json', 'w') as result_file:
         result_file.write(json.dumps(top_k_topics_as_json))
     result_file.close()
     print("Done")
