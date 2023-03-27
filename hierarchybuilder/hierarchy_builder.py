@@ -168,59 +168,59 @@ def hierarchy_builder(examples, entries_number=50, ignore_words=None, device="",
     return json_top_k_nodes
 
 
-def get_words_as_span(words):
-    span = ""
-    idx = 0
-    for word in words:
-        # if idx == 0 and token.tag_ in ['IN', 'TO']:
-        #     continue
-        if idx != 0 and (word != ',' and word != '.'):
-            span += ' '
-        span += word
-        idx += 1
-    return span
-
-
-def convert_to_input_format(data):
-    # f = open(file_name, 'r', encoding='utf-8')
-    # data = json.load(f)
-    example_lst = []
-    ignore_lst = set()
-    disease_name_lst = set()
-    for type in data:
-        example_data = type['sub_matches']['main']
-        sentence_as_lst = example_data['words']
-        offset_first = example_data['captures']['arg1']['first']
-        offset_last = example_data['captures']['arg1']['last']
-        span_as_lst = sentence_as_lst[offset_first: offset_last + 1]
-        example_lst.append((get_words_as_span(sentence_as_lst), get_words_as_span(span_as_lst)))
-        symptom_offset_first = example_data['captures']['arg2']['first']
-        symptom_offset_last = example_data['captures']['arg2']['last']
-        symptom_name = sentence_as_lst[symptom_offset_first: symptom_offset_last + 1]
-        ignore_lst.update(symptom_name)
-        disease_name_lst.add(get_words_as_span(symptom_name))
-    return example_lst, ignore_lst, disease_name_lst
-
-
-file_name_all = 'input_files/input_json_files/full_results.jsonl'
-# f = open(file_name_all, 'r', encoding='utf-8')
-json_data_lst = []
-counter = 0
-for line in open(file_name_all, 'r', encoding='utf-8'):
-    if counter < 51:
-        counter += 1
-        continue
-    if counter > 54:
-        break
-    symptom_data = json.loads(line)
-    example_lst, ignore_lst, disease_name_lst = convert_to_input_format(symptom_data)
-    if not ignore_lst:
-        continue
-    symptom_name = list(disease_name_lst)[0].lower()
-    ignore_lst.update(['cause', 'induced'])
-    json_top_k_nodes_output = hierarchy_builder(examples=example_lst, umls_host="127.0.0.1", umls_port=3500, entries_number=50,
-                                         ignore_words=list(ignore_lst), has_umls_server=True)
-    with open(symptom_name + '.json', 'w') as result_file:
-        result_file.write(json_top_k_nodes_output)
-    counter += 1
-    break
+# def get_words_as_span(words):
+#     span = ""
+#     idx = 0
+#     for word in words:
+#         # if idx == 0 and token.tag_ in ['IN', 'TO']:
+#         #     continue
+#         if idx != 0 and (word != ',' and word != '.'):
+#             span += ' '
+#         span += word
+#         idx += 1
+#     return span
+#
+#
+# def convert_to_input_format(data):
+#     # f = open(file_name, 'r', encoding='utf-8')
+#     # data = json.load(f)
+#     example_lst = []
+#     ignore_lst = set()
+#     disease_name_lst = set()
+#     for type in data:
+#         example_data = type['sub_matches']['main']
+#         sentence_as_lst = example_data['words']
+#         offset_first = example_data['captures']['arg1']['first']
+#         offset_last = example_data['captures']['arg1']['last']
+#         span_as_lst = sentence_as_lst[offset_first: offset_last + 1]
+#         example_lst.append((get_words_as_span(sentence_as_lst), get_words_as_span(span_as_lst)))
+#         symptom_offset_first = example_data['captures']['arg2']['first']
+#         symptom_offset_last = example_data['captures']['arg2']['last']
+#         symptom_name = sentence_as_lst[symptom_offset_first: symptom_offset_last + 1]
+#         ignore_lst.update(symptom_name)
+#         disease_name_lst.add(get_words_as_span(symptom_name))
+#     return example_lst, ignore_lst, disease_name_lst
+#
+#
+# file_name_all = 'input_files/input_json_files/full_results.jsonl'
+# # f = open(file_name_all, 'r', encoding='utf-8')
+# json_data_lst = []
+# counter = 0
+# for line in open(file_name_all, 'r', encoding='utf-8'):
+#     if counter < 51:
+#         counter += 1
+#         continue
+#     if counter > 54:
+#         break
+#     symptom_data = json.loads(line)
+#     example_lst, ignore_lst, disease_name_lst = convert_to_input_format(symptom_data)
+#     if not ignore_lst:
+#         continue
+#     symptom_name = list(disease_name_lst)[0].lower()
+#     ignore_lst.update(['cause', 'induced'])
+#     json_top_k_nodes_output = hierarchy_builder(examples=example_lst, umls_host="127.0.0.1", umls_port=3500, entries_number=50,
+#                                          ignore_words=list(ignore_lst), has_umls_server=True)
+#     with open(symptom_name + '.json', 'w') as result_file:
+#         result_file.write(json_top_k_nodes_output)
+#     counter += 1
+#     break
