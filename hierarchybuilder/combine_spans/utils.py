@@ -355,7 +355,7 @@ def update_ans_with_remove_link(node, label_lst, visited=set()):
 def remove_node_parents_edge(node, child):
     if node in child.parents:
         child.parents.remove(node)
-    while child not in node.children:
+    while child in node.children:
         node.children.remove(child)
     # parents_remove_lst = set()
     # for parent in child.parents:

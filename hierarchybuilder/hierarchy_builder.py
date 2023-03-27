@@ -5,6 +5,7 @@ import hierarchybuilder.visualization.json_dag_visualization as json_dag_visuali
 import hierarchybuilder.DAG.DAG_utils as DAG_utils
 from hierarchybuilder.taxonomy import taxonomies_from_UMLS
 import sys
+import json
 
 sys.setrecursionlimit(10000)
 
@@ -67,9 +68,10 @@ def get_uncounted_examples(example_list, global_longest_np_lst, dict_global_long
            dict_uncounted_expansions, dict_counted_longest_answers
 
 
-def hierarchy_builder(examples, output_file_name='output', entries_number=50, ignore_words=None, device="", host="127.0.0.1",
-                      port=5000):
-    ut.initialize_data(examples, host, port, ignore_words, output_file_name, entries_number, device)
+def hierarchy_builder(examples, entries_number=50, ignore_words=None, device="", umls_host="127.0.0.1", umls_port=5000,
+                      has_umls_server=False):
+    ut.initialize_data(examples, umls_host, umls_port, ignore_words, entries_number, device,
+                       has_umls_server)
     dict_span_to_rank = {}
     dict_span_to_lemma_lst = ut.dict_span_to_lemma_lst
     global_dict_label_to_object = {}
@@ -122,20 +124,23 @@ def hierarchy_builder(examples, output_file_name='output', entries_number=50, ig
                                                                                 span_to_vector)
     print("End to detect equivalent nodes among children of each node by DL model")
     DAG_utils.update_symmetric_relation_in_DAG(topic_object_lst)
-    combine_nodes_UMLS.combine_nodes_by_umls_synonymous_spans(span_to_object, dict_object_to_global_label,
-                                                              global_dict_label_to_object, topic_object_lst,
-                                                              span_to_vector)
-    ut.update_nodes_labels(topic_object_lst)
-    DAG_utils.update_symmetric_relation_in_DAG(topic_object_lst)
+    if has_umls_server:
+        combine_nodes_UMLS.combine_nodes_by_umls_synonymous_spans(span_to_object, dict_object_to_global_label,
+                                                                  global_dict_label_to_object, topic_object_lst,
+                                                                  span_to_vector)
+        ut.update_nodes_labels(topic_object_lst)
+        DAG_utils.update_symmetric_relation_in_DAG(topic_object_lst)
     DAG_utils.initialize_nodes_weighted_average_vector(topic_object_lst, global_index_to_similar_longest_np,
                                                        span_to_vector)
     # Adding taxonomic nodes
-    taxonomic_np_objects = taxonomies_from_UMLS.add_taxonomies_to_DAG_by_UMLS(topic_object_lst, dict_span_to_rank,
-                                                                              span_to_object, span_to_vector)
-    print("End to detect equivalent nodes and taxonomic relations by UMLS")
-    DAG_utils.update_symmetric_relation_in_DAG(topic_object_lst)
-    DAG_utils.initialize_nodes_weighted_average_vector(topic_object_lst, global_index_to_similar_longest_np,
-                                                       span_to_vector)
+    taxonomic_np_objects = {}
+    if has_umls_server:
+        taxonomic_np_objects = taxonomies_from_UMLS.add_taxonomies_to_DAG_by_UMLS(topic_object_lst, dict_span_to_rank,
+                                                                                  span_to_object, span_to_vector)
+        print("End to detect equivalent nodes and taxonomic relations by UMLS")
+        DAG_utils.update_symmetric_relation_in_DAG(topic_object_lst)
+        DAG_utils.initialize_nodes_weighted_average_vector(topic_object_lst, global_index_to_similar_longest_np,
+                                                           span_to_vector)
     paraphrase_detection_SAP_BERT.combine_equivalent_parent_and_children_nodes_by_semantic_DL_model(
         topic_object_lst.copy(), span_to_object, dict_object_to_global_label, global_dict_label_to_object,
         topic_object_lst, span_to_vector)
@@ -146,6 +151,7 @@ def hierarchy_builder(examples, output_file_name='output', entries_number=50, ig
     hierarchical_structure_algorithms.DAG_contraction_by_set_cover_algorithm(topic_object_lst,
                                                                              global_dict_label_to_object,
                                                                              global_index_to_similar_longest_np)
+    ut.update_nodes_labels(topic_object_lst)
     print("Finish DAG contraction")
     DAG_utils.remove_redundant_nodes(topic_object_lst)
     print("Redundant nodes were removed")
@@ -157,39 +163,64 @@ def hierarchy_builder(examples, output_file_name='output', entries_number=50, ig
         hierarchical_structure_algorithms.extract_top_k_concept_nodes_greedy_algorithm(entries_number, topic_object_lst,
                                                                                        global_index_to_similar_longest_np)
     print("Finish select top k")
-    json_dag_visualization.json_dag_visualization(top_k_topics, global_index_to_similar_longest_np,
-                                                  taxonomic_np_objects, topic_object_lst)
+    json_top_k_nodes = json_dag_visualization.json_dag_visualization(top_k_topics, global_index_to_similar_longest_np,
+                                                                     taxonomic_np_objects, topic_object_lst)
+    return json_top_k_nodes
 
 
-# def get_words_as_span(words):
-#     span = ""
-#     idx = 0
-#     for word in words:
-#         # if idx == 0 and token.tag_ in ['IN', 'TO']:
-#         #     continue
-#         if idx != 0 and (word != ',' and word != '.'):
-#             span += ' '
-#         span += word
-#         idx += 1
-#     return span
-#
-#
-# def convert_to_input_format(file_name):
-#     f = open(file_name, 'r', encoding='utf-8')
-#     data = json.load(f)
-#     example_lst = []
-#     for type in data:
-#         example_data = type['sub_matches']['main']
-#         sentence_as_lst = example_data['words']
-#         offset_first = example_data['captures']['arg1']['first']
-#         offset_last = example_data['captures']['arg1']['last']
-#         span_as_lst = sentence_as_lst[offset_first: offset_last + 1]
-#         example_lst.append((get_words_as_span(sentence_as_lst), get_words_as_span(span_as_lst)))
-#     return example_lst
-#
-#
-# example_lst = convert_to_input_format('input_files/input_json_files/obesity.json')
-#
-#
-# hierarchy_builder(examples=example_lst, output_file='results/obesity_debug_mode', entries_number=50,
-#                   ignore_words=['cause', 'obesity'])
+def get_words_as_span(words):
+    span = ""
+    idx = 0
+    for word in words:
+        # if idx == 0 and token.tag_ in ['IN', 'TO']:
+        #     continue
+        if idx != 0 and (word != ',' and word != '.'):
+            span += ' '
+        span += word
+        idx += 1
+    return span
+
+
+def convert_to_input_format(data):
+    # f = open(file_name, 'r', encoding='utf-8')
+    # data = json.load(f)
+    example_lst = []
+    ignore_lst = set()
+    disease_name_lst = set()
+    for type in data:
+        example_data = type['sub_matches']['main']
+        sentence_as_lst = example_data['words']
+        offset_first = example_data['captures']['arg1']['first']
+        offset_last = example_data['captures']['arg1']['last']
+        span_as_lst = sentence_as_lst[offset_first: offset_last + 1]
+        example_lst.append((get_words_as_span(sentence_as_lst), get_words_as_span(span_as_lst)))
+        symptom_offset_first = example_data['captures']['arg2']['first']
+        symptom_offset_last = example_data['captures']['arg2']['last']
+        symptom_name = sentence_as_lst[symptom_offset_first: symptom_offset_last + 1]
+        ignore_lst.update(symptom_name)
+        disease_name_lst.add(get_words_as_span(symptom_name))
+    return example_lst, ignore_lst, disease_name_lst
+
+
+file_name_all = 'input_files/input_json_files/full_results.jsonl'
+# f = open(file_name_all, 'r', encoding='utf-8')
+json_data_lst = []
+counter = 0
+for line in open(file_name_all, 'r', encoding='utf-8'):
+    if counter < 51:
+        counter += 1
+        continue
+    if counter > 54:
+        break
+    symptom_data = json.loads(line)
+    example_lst, ignore_lst, disease_name_lst = convert_to_input_format(symptom_data)
+    if not ignore_lst:
+        continue
+    symptom_name = list(disease_name_lst)[0].lower()
+    ignore_lst.update(['cause', 'induced'])
+    json_top_k_nodes_output = hierarchy_builder(examples=example_lst, umls_host="127.0.0.1", umls_port=3500, entries_number=50,
+                                         ignore_words=list(ignore_lst), has_umls_server=True)
+    with open(symptom_name + '.json', 'w') as result_file:
+        result_file.write(json_top_k_nodes_output)
+    counter += 1
+    break

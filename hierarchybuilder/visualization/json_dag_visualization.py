@@ -1,6 +1,7 @@
 import hierarchybuilder.DAG.DAG_utils as DAG_utils
 import hierarchybuilder.utils as ut
 import json
+from json import JSONEncoder
 
 
 def print_flat_list_to_file(concept_to_occurrences):
@@ -30,12 +31,37 @@ def get_all_labels(nodes, labels, visited=set()):
         get_all_labels(node.children, labels, visited)
 
 
+class json_top_k_object:
+    def __init__(self, json_top_k):
+        self.json_top_k = json_top_k
+
+    # def to_json(self):
+    #     to_return = self.json_top_k
+    #
+    #     return to_return
+    def to_json(self):
+        to_return = {}
+        for node in self.json_top_k:
+            to_return.update(node.to_json())
+
+        return to_return
+
+
 def json_dag_visualization(top_k_topics, global_index_to_similar_longest_np, taxonomic_np_objects, topic_object_lst):
     different_concepts = set()
     concept_to_occurrences = {}
     top_k_topics_as_json = DAG_utils.from_DAG_to_JSON(top_k_topics, global_index_to_similar_longest_np,
                                                       taxonomic_np_objects, different_concepts,
                                                       concept_to_occurrences)
+    np_object_to_json_node = {}
+    DAG_utils.from_DAG_to_json_nested_objects(top_k_topics, global_index_to_similar_longest_np,
+                                              np_object_to_json_node)
+    json_top_k_nodes = []
+    for np_object in top_k_topics:
+        json_top_k_nodes.append(np_object_to_json_node[hash(np_object)])
+    json_entry_list = json.dumps(json_top_k_object(json_top_k_nodes), default=DAG_utils.default)
+
+    # root = json_top_k_object(json_top_k_nodes)
     top_k_labels = set()
     get_all_labels(top_k_topics, top_k_labels, visited=set())
     covered_labels = DAG_utils.get_frequency_from_labels_lst(global_index_to_similar_longest_np,
@@ -46,7 +72,5 @@ def json_dag_visualization(top_k_topics, global_index_to_similar_longest_np, tax
                                                                      labels_of_topics)
     print("total labels of topics:", total_labels_of_topics)
     print("Covered labels by selected nodes:", covered_labels)
-    with open(ut.etiology + '.json', 'w') as result_file:
-        result_file.write(json.dumps(top_k_topics_as_json))
-    result_file.close()
     print("Done")
+    return json_entry_list

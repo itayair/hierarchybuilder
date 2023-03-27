@@ -3,6 +3,32 @@ from hierarchybuilder import utils as ut
 import hierarchybuilder.DAG.NounPhraseObject as NounPhrase
 from hierarchybuilder.visualization import normalize_quantity
 import torch
+import json
+
+
+def default(obj):
+    if hasattr(obj, 'to_json'):
+        return obj.to_json()
+    raise TypeError(f'Object of type {obj.__class__.__name__} is not JSON serializable')
+
+
+class json_NP_node:
+    def __init__(self, name, aliases, sources_number, aliases_sources_number, children, sentences):
+        self.name = name
+        self.aliases = aliases
+        self.sources_number = sources_number
+        self.aliases_sources_number = aliases_sources_number
+        self.children = children
+        self.sentences = sentences
+
+    def to_json(self):
+        to_return = {self.name: {"aliases": self.aliases, "sources_number": self.sources_number,
+                     "aliases_sources_number": self.aliases_sources_number, "sentences": self.sentences}}
+        children_dict = {}
+        for child in self.children:
+            children_dict.update(child.to_json())
+        to_return[self.name]["children"] = children_dict
+        return to_return
 
 
 def add_node_between_nodes(parent, child, new_node):
@@ -62,6 +88,7 @@ def add_NP_to_DAG_bottom_to_up(np_object_to_add, np_object, visited, similar_np_
             is_added |= add_NP_to_DAG_bottom_to_up(np_object_to_add, parent, visited, similar_np_object,
                                                    visited_and_added)
             if similar_np_object[0]:
+                visited_and_added.add(np_object)
                 return True
         if not is_added:
             np_object_to_add.add_children([np_object])
@@ -319,6 +346,47 @@ def from_DAG_to_JSON(topic_object_lst, global_index_to_similar_longest_np, new_t
     return np_val_lst
 
 
+def get_longest_nps_by_labels(global_index_to_similar_longest_np, label_lst):
+    sentences = set()
+    for label in label_lst:
+        full_np_lst = global_index_to_similar_longest_np.get(label)
+        for np in full_np_lst:
+            if np in ut.dict_full_np_to_sentences:
+                sentences.update(ut.dict_full_np_to_sentences[np])
+    return list(sentences)
+
+
+def get_new_json_node(np_object, global_index_to_similar_longest_np, json_node_children_lst):
+    np_object.span_lst = list(np_object.span_lst)
+    np_object.span_lst.sort(key=lambda span_lst: ut.dict_span_to_counter.get(span_lst, 0), reverse=True)
+    span_to_represent = normalize_quantity.normalized_quantity_node(np_object)
+    label_lst = get_labels_of_children(np_object.children)
+    label_lst = np_object.label_lst - label_lst
+    NP_occurrences = get_frequency_from_labels_lst(global_index_to_similar_longest_np,
+                                                   label_lst)
+    covered_occurrences = get_frequency_from_labels_lst(global_index_to_similar_longest_np,
+                                                        np_object.label_lst)
+    sentences = get_longest_nps_by_labels(global_index_to_similar_longest_np, label_lst)
+    json_node = json_NP_node(span_to_represent, np_object.span_lst, covered_occurrences, NP_occurrences,
+                             json_node_children_lst, sentences)
+    return json_node
+
+
+def from_DAG_to_json_nested_objects(np_object_lst, global_index_to_similar_longest_np,
+                                    np_object_to_json_node, visited=set()):
+    for np_object in np_object_lst:
+        if np_object in visited:
+            continue
+        from_DAG_to_json_nested_objects(np_object.children, global_index_to_similar_longest_np,
+                                        np_object_to_json_node, visited)
+        visited.add(np_object)
+        json_node_children_lst = []
+        for child in np_object.children:
+            json_node_children_lst.append(np_object_to_json_node[hash(child)])
+        json_node = get_new_json_node(np_object, global_index_to_similar_longest_np, json_node_children_lst)
+        np_object_to_json_node[hash(np_object)] = json_node
+
+
 def add_dependency_routh_between_longest_np_to_topic(span_to_object, topic_object_lst,
                                                      longest_nps, topic_object, dict_object_to_global_label,
                                                      global_dict_label_to_object):
@@ -388,7 +456,7 @@ def update_symmetric_relation_in_DAG(nodes_lst, visited=set()):
             print("node is found in its parents' list")
             print(node.span_lst)
         if node in node.children:
-            while node not in node.children:
+            while node in node.children:
                 node.children.remove(node)
             print("node is found in its children's list")
             print(node.span_lst)
@@ -530,7 +598,7 @@ def remove_redundant_nodes(nodes_lst):
         for parent in parents:
             if parent in ignore_lst:
                 continue
-            if len(set(parent.children)) == 1 and parent.label_lst == s.label_lst:
+            if len(set(parent.children)) == 1 and parent.label_lst.issubset(s.label_lst):
                 if parent.parents:
                     for ancestor in parent.parents:
                         ancestor.add_children([s])

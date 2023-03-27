@@ -25,17 +25,17 @@ dict_noun_lemma_to_synonyms = {}
 dict_noun_lemma_to_noun_words = {}
 dict_noun_lemma_to_counter = {}
 dict_noun_word_to_counter = {}
-etiology = 'output'
+dict_full_np_to_sentences = {}
 entries_number_limit = 50
 host_and_port = "127.0.0.1:5000"
 
 
-def initialize_data(examples, host_val, port_val, ignore_words=None, output_file_name='', entries_number=50,
-                    device_type=""):
+def initialize_data(examples, host_val, port_val, ignore_words, entries_number,
+                    device_type, has_umls_server):
     global topics_dict, dict_span_to_counter, dict_word_to_lemma, dict_lemma_to_synonyms, \
         dict_longest_span_to_counter, dict_noun_lemma_to_synonyms, dict_noun_lemma_to_noun_words, \
-        dict_noun_lemma_to_counter, dict_noun_word_to_counter, etiology, entries_number_limit, device, model, \
-        host_and_port
+        dict_noun_lemma_to_counter, dict_noun_word_to_counter, entries_number_limit, device, model, \
+        host_and_port, dict_full_np_to_sentences
     host_and_port = "http://" + host_val + ":" + str(port_val)
     if device_type:
         device = device_type
@@ -43,14 +43,13 @@ def initialize_data(examples, host_val, port_val, ignore_words=None, output_file
         model = model.eval()
     entries_number_limit = entries_number
     if ignore_words is None:
-        ignore_words = set('cause')
-    if output_file_name:
-        etiology = output_file_name
+        ignore_words = set()
     collection_format_examples = parse_medical_data.get_examples_as_all_optional_answers_format(examples)
     topics_dict, dict_span_to_counter, dict_word_to_lemma, dict_lemma_to_synonyms, \
     dict_longest_span_to_counter, dict_noun_lemma_to_synonyms, dict_noun_lemma_to_noun_words, dict_noun_lemma_to_counter, \
-    dict_noun_word_to_counter = main_clustering.convert_examples_to_clustered_data(collection_format_examples,
-                                                                                   ignore_words, host_and_port)
+    dict_noun_word_to_counter, dict_full_np_to_sentences = \
+        main_clustering.convert_examples_to_clustered_data(collection_format_examples, ignore_words, host_and_port,
+                                                           has_umls_server)
     dict_span_to_counter.update(dict_noun_word_to_counter)
     dict_span_to_counter.update(dict_noun_lemma_to_counter)
 

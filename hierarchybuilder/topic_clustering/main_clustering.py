@@ -91,7 +91,7 @@ def extend_ignore_words(ignore_words):
     ignore_words.extend(new_ignore_words)
 
 
-def convert_examples_to_clustered_data(examples, ignore_words, host_and_port):
+def convert_examples_to_clustered_data(examples, ignore_words, host_and_port, has_umls_server):
     utils_clustering.dict_span_to_topic_entry = {}
     utils_clustering.dict_span_to_rank = {}
     utils_clustering.dict_noun_lemma_to_counter = {}
@@ -100,6 +100,7 @@ def convert_examples_to_clustered_data(examples, ignore_words, host_and_port):
     utils_clustering.dict_noun_word_to_counter = {}
     utils_clustering.dict_noun_lemma_to_span = {}
     dict_noun_lemma_to_synonyms = {}
+    dict_full_np_to_sentences = {}
     span_lst = set()
     dict_span_to_counter = {}
     dict_longest_span_to_counter = {}
@@ -108,13 +109,15 @@ def convert_examples_to_clustered_data(examples, ignore_words, host_and_port):
     dict_sentence_to_span_lst = {}
     valid_span_lst = set()
     extend_ignore_words(ignore_words)
+    head_lst = set()
     for biggest_noun_phrase, head_span, all_valid_nps_lst, sentence in examples:
+        head_lst.add(head_span.lemma_.lower())
         span = valid_expansion_utils.get_tokens_as_span(biggest_noun_phrase)
         dict_sentence_to_span_lst[sentence] = dict_sentence_to_span_lst.get(sentence, [])
         if span in span_lst:
             counter = utils_clustering.update_recurrent_span(dict_sentence_to_span_lst, sentence, span,
                                                              dict_longest_span_to_counter, all_valid_nps_lst,
-                                                             dict_span_to_counter, counter)
+                                                             dict_span_to_counter, counter, dict_full_np_to_sentences)
             continue
         dict_sentence_to_span_lst[sentence].append(span)
         span_lst.add(span)
@@ -131,16 +134,19 @@ def convert_examples_to_clustered_data(examples, ignore_words, host_and_port):
                                                                                         all_valid_nps_lst, span,
                                                                                         ignore_words)
         if is_valid_example:
+            dict_full_np_to_sentences[span] = [sentence]
             counter = utils_clustering.update_new_valid_example(span, dict_longest_span_to_counter, all_valid_nps_lst,
-                                                                dict_span_to_counter,
-                                                                valid_expansion_utils, counter, valid_span_lst)
-    print(counter)
-    utils_clustering.create_synonym_dicts(dict_noun_lemma_to_synonyms, host_and_port)
-    dict_lemma_to_synonyms = utils_clustering.create_dicts_for_words_similarity(dict_word_to_lemma, host_and_port)
+                                                                dict_span_to_counter, valid_expansion_utils, counter,
+                                                                valid_span_lst)
+    utils_clustering.create_synonym_dicts(dict_noun_lemma_to_synonyms, host_and_port, has_umls_server)
+    dict_lemma_to_synonyms = utils_clustering.create_dicts_for_words_similarity(dict_word_to_lemma, host_and_port,
+                                                                                has_umls_server)
     dict_lemma_to_synonyms.update(dict_noun_lemma_to_synonyms)
     topics_dict = {k: v for k, v in
                    sorted(utils_clustering.dict_noun_lemma_to_examples.items(), key=lambda item: len(item[1]),
-                          reverse=True)}
+                          reverse=True) if set(dict_noun_lemma_to_synonyms[k]).intersection(head_lst)}
+
     return topics_dict, dict_span_to_counter, dict_word_to_lemma, dict_lemma_to_synonyms, \
            dict_longest_span_to_counter, dict_noun_lemma_to_synonyms, utils_clustering.dict_noun_lemma_to_noun_words, \
-           utils_clustering.dict_noun_lemma_to_counter, utils_clustering.dict_noun_word_to_counter
+           utils_clustering.dict_noun_lemma_to_counter, utils_clustering.dict_noun_word_to_counter, \
+           dict_full_np_to_sentences

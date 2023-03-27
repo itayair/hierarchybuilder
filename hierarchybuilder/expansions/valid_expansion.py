@@ -3,11 +3,11 @@ from nltk.corpus import stopwords
 
 stop_words = set(stopwords.words('english'))
 tied_deps = ['compound', 'mwe', 'case', 'mark', 'auxpass', 'name', 'aux', 'neg', 'det', 'goeswith', 'nummod',
-             'quantmod', 'nmod:npmod']
+             'quantmod', 'nmod:npmod', 'det:predet']
 tied_couples = [['auxpass', 'nsubjpass']]
 
 dep_type_optional = ['advmod', 'dobj', 'npadvmod', 'nmod', 'conj', 'aux', 'poss', 'nmod:poss',
-                     'xcomp']  # , 'conj', 'nsubj', 'appos'
+                     'xcomp', 'dep']  # , 'conj', 'nsubj', 'appos'
 
 acl_to_seq = ['acomp', 'dobj', 'nmod']  # acl and relcl + [[['xcomp'], ['aux']], 'dobj']
 dep_to_seq = ['quantmod', 'cop']  # 'cc',
@@ -285,8 +285,8 @@ def get_children_expansion(sub_np_lst, lst_children, boundary_np_to_the_left, he
     for child in lst_children:
         if child in tokens_to_skip:
             continue
-        if child.text in stop_words:
-            continue
+        # if child.text in stop_words:
+        #     continue
         is_follow_by_conj_token = False
         if child.i < len(child.doc) - 3 and child.doc[child.i + 1] in lst_children:
             if child.doc[child.i + 1].text in ['/', '-', ',']:
@@ -317,8 +317,7 @@ def get_children_expansion(sub_np_lst, lst_children, boundary_np_to_the_left, he
             if sub_np:
                 sub_np_lst.extend(sub_np)
         else:
-            if child.dep_ not in ['nsubj']:
-                continue
+            continue
     set_couple_deps(seq_dict, boundary_np_to_the_left, sub_np_lst, head)
 
 

@@ -7,10 +7,7 @@ from nltk.corpus import stopwords
 # import umls_loader
 stop_words = set(stopwords.words('english'))
 tied_deps = ['compound', 'mwe', 'name', 'nummod']
-neglect_deps = ['neg', 'case', 'mark', 'auxpass', 'aux', 'cop', 'nummod', 'quantmod', 'nmod:npmod']
-query_words = ['sciatica', 'cause', 'causing', 'diagnosing', 'diagnosis',
-               'pain', 'chest', 'abortion', 'diabetes', 'jaundice', 'meningitis',
-               'pneumonia']
+neglect_deps = ['neg', 'case', 'mark', 'auxpass', 'aux', 'cop', 'nummod', 'quantmod', 'nmod:npmod', 'det:predet']
 
 dict_span_to_topic_entry = {}
 dict_span_to_rank = {}
@@ -48,11 +45,12 @@ def set_cover():
 
 
 def update_recurrent_span(dict_sentence_to_span_lst, sentence, span, dict_longest_span_to_counter, all_valid_nps_lst,
-                          dict_span_to_counter, counter):
+                          dict_span_to_counter, counter, dict_full_np_to_sentences):
     if span not in dict_sentence_to_span_lst[sentence]:
         dict_sentence_to_span_lst[sentence].append(span)
         if span in dict_longest_span_to_counter:
             dict_longest_span_to_counter[span] += 1
+            dict_full_np_to_sentences[span].append(sentence)
             counter += 1
         for sub_span in all_valid_nps_lst:
             dict_span_to_counter[
@@ -62,8 +60,7 @@ def update_recurrent_span(dict_sentence_to_span_lst, sentence, span, dict_longes
 
 
 def update_new_valid_example(span, dict_longest_span_to_counter, all_valid_nps_lst,
-                             dict_span_to_counter,
-                             valid_expansion_utils, counter, valid_span_lst):
+                             dict_span_to_counter, valid_expansion_utils, counter, valid_span_lst):
     dict_longest_span_to_counter[span] = 1
     # if not valid_span_lst:
     #     dict_span_to_counter[span] = dict_span_to_counter.get(span, 0) + 1
@@ -175,22 +172,37 @@ def get_synonyms_by_word(word):
     return synonyms
 
 
-def create_dicts_for_words_similarity(dict_word_to_lemma, host_and_port):
-    dict_lemma_to_synonyms = {}
-    lemma_lst = set()
-    for _, lemma in dict_word_to_lemma.items():
-        lemma_lst.add(lemma)
+def create_dict_from_wordnet_word_to_exist_synonyms(lemma_lst, dict_lemma_to_synonyms):
     for lemma in lemma_lst:
         synonyms = get_synonyms_by_word(lemma)
         synonyms = [synonym for synonym in synonyms if synonym in lemma_lst]
         synonyms.append(lemma)
         dict_lemma_to_synonyms[lemma] = set(synonyms)
+
+
+def create_dicts_for_words_similarity(dict_word_to_lemma, host_and_port, has_umls_server):
+    lemma_lst = set()
+    for _, lemma in dict_word_to_lemma.items():
+        lemma_lst.add(lemma)
+    dict_lemma_to_synonyms = {}
+    create_dict_from_wordnet_word_to_exist_synonyms(lemma_lst, dict_lemma_to_synonyms)
     word_lst = list(lemma_lst)
-    update_dictionary_umls_synonyms(dict_lemma_to_synonyms, word_lst, host_and_port)
+    if has_umls_server:
+        update_dictionary_umls_synonyms(dict_lemma_to_synonyms, word_lst, host_and_port)
     dict_lemma_to_synonyms = {k: v for k, v in
                               sorted(dict_lemma_to_synonyms.items(), key=lambda item: len(item[1]),
                                      reverse=True)}
     return dict_lemma_to_synonyms
+
+
+def remove_non_relevant_synonyms_from_dict(dict_word_to_synonyms):
+    for noun, synonyms in dict_word_to_synonyms.items():
+        remove_lst = set()
+        for synonym in synonyms:
+            if synonym not in dict_word_to_synonyms:
+                remove_lst.add(synonym)
+        for synonym in remove_lst:
+            synonyms.remove(synonym)
 
 
 def update_dictionary_umls_synonyms(dict_word_to_synonyms, word_lst, host_and_port):
@@ -214,16 +226,10 @@ def update_dictionary_umls_synonyms(dict_word_to_synonyms, word_lst, host_and_po
                     dict_word_to_synonyms.update(output)
                 except:
                     continue
-    for noun, synonyms in dict_word_to_synonyms.items():
-        remove_lst = set()
-        for synonym in synonyms:
-            if synonym not in dict_word_to_synonyms:
-                remove_lst.add(synonym)
-        for synonym in remove_lst:
-            synonyms.remove(synonym)
+    remove_non_relevant_synonyms_from_dict(dict_word_to_synonyms)
 
 
-def create_synonym_dicts(dict_noun_lemma_to_synonyms, host_and_port):
+def create_synonym_dicts(dict_noun_lemma_to_synonyms, host_and_port, has_umls_server):
     global dict_noun_lemma_to_examples, dict_noun_lemma_to_counter
     dict_noun_lemma_to_examples_new = {}
     dict_noun_lemma_to_counter_new = {}
@@ -231,7 +237,11 @@ def create_synonym_dicts(dict_noun_lemma_to_synonyms, host_and_port):
                                    sorted(dict_noun_lemma_to_examples.items(), key=lambda item: len(item[1]),
                                           reverse=True)}
     word_lst = list(dict_noun_lemma_to_examples.keys())
-    update_dictionary_umls_synonyms(dict_noun_lemma_to_synonyms, word_lst, host_and_port)
+    if has_umls_server:
+        update_dictionary_umls_synonyms(dict_noun_lemma_to_synonyms, word_lst, host_and_port)
+    else:
+        create_dict_from_wordnet_word_to_exist_synonyms(word_lst, dict_noun_lemma_to_synonyms)
+        remove_non_relevant_synonyms_from_dict(dict_noun_lemma_to_synonyms)
     for word, synonyms in dict_noun_lemma_to_synonyms.items():
         dict_noun_lemma_to_examples_new[word] = []
         dict_noun_lemma_to_examples_new[word].extend(dict_noun_lemma_to_examples[word])
