@@ -12,9 +12,9 @@ def combine_nodes_by_umls_synonymous_spans_dfs_helper(topic_object_lst, dict_spa
     visited.add(np_object)
     equivalent_object_lst = set()
     post_data = json.dumps(list(np_object.span_lst))
-    dict_response = requests.post(ut.host_and_port + '/create_synonyms_dictionary/',
-                                  params={"words": post_data}, timeout=3)
     try:
+        dict_response = requests.post(ut.host_and_port + '/create_synonyms_dictionary/',
+                                      params={"words": post_data}, timeout=3)
         output = dict_response.json()
         synonyms_dict = output['synonyms']
     except:

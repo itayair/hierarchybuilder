@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="hierarchybuilder",
-    version="0.0.6",
+    version="0.0.7",
     author="Itay Yair and Hillel Taub-Tabib and Yoav Goldberg",
     author_email="iy24592@gmail.com",
     description="implementation of hierarchy builder",

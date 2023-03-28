@@ -50,7 +50,7 @@ The `entries_number` parameter determines the number of entries that will be dis
 The `ignore_words` parameter is a list of words that should be excluded from the top level entries, 
 usually words that appear in the query.
 The `has_umls_server` parameter indicates if the user uses UMLS or not.
-The `umls_host` and `usml_port` parameters are for the UMLS server port
+The `umls_host` and `usml_port` parameters are for the UMLS server.
 The package will use these examples to generate a DAG structure that organizes and displays a large collection of related 
 textual strings in a hierarchical form. 
 
@@ -61,10 +61,11 @@ The structure is defined as a Directed Acyclic Graph (DAG) where each node repre
 Each node in the DAG is defined by the following properties:
 * Label that represent the concept of the node
 * `aliases` - Aliases of the concept
-* `sources_number` - number of the input spans that represented by the node
-* `aliases_sources_number` - number of input spans that are fully represented by the label (the full noun phrase is one of the aliases)
-* `sentences` - the sentences of the input spans that are fully represented by the node(as defined in "aliases_sources_number")
+* `sources_number` - the total number of input spans that are associated with the node and its children
+* `aliases_sources_number` - the number of input spans that are fully represented by one of the aliases of the node
+* `sentences`: a list of the input sentences of spans that are fully represented by one of the aliases of the node
 * `children` - Nodes that are defined by more specific concepts
+
 For example, a node in the JSON file might look like this:
 ```json
 {
