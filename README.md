@@ -43,7 +43,7 @@ import hierarchybuilder.hierarchy_builder as hierarchy_builder
 Examples = [("sentence1", "span in sentence1"), ("sentence2", "span in the sentence2"), ...]
 # The default values are:
 # entries_number=50, ignore_words=None, device="", umls_host="127.0.0.1", usml_port=5000, has_umls_server=False
-hierarchy_builder.hierarchy_builder(examples=Examples, entries_number=50)
+json_output = hierarchy_builder.hierarchy_builder(examples=Examples, entries_number=50)
 ```
 To use the `hierarchy_builder` function, provide a list of sentence and span tuples as input via the `examples` parameter. 
 The `entries_number` parameter determines the number of entries that will be displayed at the top level of the resulting DAG. 
