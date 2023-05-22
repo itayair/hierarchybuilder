@@ -5,6 +5,16 @@ strings in a hierarchical DAG structure for exploratory search. Currently, the p
 but in the future, it will be expanded to support other domains. 
 This will be achieved by allowing users to add their own dictionaries and taxonomic relations datasets for a specific 
 domain.
+
+
+##  Showcase Demonstration
+### Video Illustration
+For a visual demonstration, please refer to the following video:
+https://vimeo.com/801853889 
+### Online Demonstration
+To experience the system under various conditions, an online demonstration is accessible at:
+http://35.204.179.34:3001/
+
 ## Installations
 To install the `Hierarchy Builder` package, please follow the steps below:
 1. Install the package via pip:
